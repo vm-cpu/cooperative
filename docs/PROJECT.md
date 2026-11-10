@@ -150,7 +150,7 @@
 ## 8. Технічна база
 
 - **Клієнт:** PWA (manifest + service worker), mobile-first.
-- **Хостинг:** Cloudflare Workers (проєкт `cooperative`), автодеплой з гілки `main` репозиторію `vm-cpu/cooperative`.
+- **Хостинг:** Cloudflare Workers (проєкт `cooperative`), окремі staging і production; перевірки з GitHub, ручний підтверджений реліз production. Див. [ENVIRONMENTS.md](ENVIRONMENTS.md).
 - **Дані:** Cloudflare D1 (SQL) — гаражі, члени, платежі, борги.
 - **Файли:** Cloudflare R2 — скани документів, план території.
 - **Безпека:** персональні дані членів кооперативу → тільки авторизований доступ, резервні копії бази.

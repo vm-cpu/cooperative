@@ -1,13 +1,64 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "cooperative",
+  "name": "cooperative-local",
+  "account_id": "55d2d3b8fd8d4d615a297eb49f5622c9",
   "main": "src/index.js",
   "compatibility_date": "2026-11-01",
+  "workers_dev": false,
+  "preview_urls": false,
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
+    "run_worker_first": true
   },
-  "observability": { "enabled": true },
-  // Preview deployments for pull requests (Cloudflare Workers Builds runs `wrangler preview`)
-  "previews": {},
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "APP_ENV": "local"
+  },
+  "env": {
+    "staging": {
+      "name": "cooperative-staging",
+      "workers_dev": true,
+      "preview_urls": false,
+      "vars": {
+        "APP_ENV": "staging"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "cooperative-staging-db",
+          "database_id": "0def9742-8adc-4483-8cb1-7fc303b315f8"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "FILES",
+          "bucket_name": "cooperative-staging-files"
+        }
+      ]
+    },
+    "production": {
+      "name": "cooperative",
+      "workers_dev": true,
+      "preview_urls": false,
+      "vars": {
+        "APP_ENV": "production"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "cooperative-production-db",
+          "database_id": "52f1aa85-e28d-44e6-95f7-bc8e471779fb"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "FILES",
+          "bucket_name": "cooperative-production-files"
+        }
+      ]
+    }
+  }
 }

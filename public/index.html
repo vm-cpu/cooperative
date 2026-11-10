@@ -3,27 +3,41 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Кооператив</title>
-    <style>
-      body {
-        font-family: system-ui, sans-serif;
-        margin: 0;
-        min-height: 100vh;
-        display: grid;
-        place-items: center;
-        background: #f6f6f4;
-        color: #1d1d1b;
-      }
-      main {
-        padding: 16px;
-        text-align: center;
-      }
-    </style>
+    <meta name="robots" content="noindex,nofollow" />
+    <title>ГБК «Ювілейний» — підготовка застосунку</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/preferences.js" defer></script>
   </head>
   <body>
-    <main>
-      <h1>Кооператив</h1>
-      <p>Проєкт запущено на Cloudflare Workers.</p>
+    <a class="skip" href="#main">Перейти до змісту</a>
+    <header>
+      <span>ГБК «Ювілейний»</span>
+      <label for="theme"
+        >Тема оформлення
+        <select id="theme">
+          <option value="system">Як на пристрої</option>
+          <option value="light">Світла</option>
+          <option value="dark">Темна</option>
+        </select>
+      </label>
+    </header>
+    <main id="main">
+      <p class="badge" data-environment>Тестове середовище</p>
+      <h1>Кооператив: починаємо з основи</h1>
+      <p data-description>Застосунок готується до запуску.</p>
+      <section aria-labelledby="next">
+        <h2 id="next">Що буде далі</h2>
+        <p>
+          У першій ітерації тут з’являться списки гаражів і власників, перегляд за рядами та пошук.
+          План розміщення гаражів додамо окремо.
+        </p>
+        <p>
+          Поки перевірте, чи зручно читати цю сторінку на телефоні, збільшувати текст і перемикати
+          тему. Збережіть посилання та поверніться після повідомлення про оновлення.
+        </p>
+      </section>
+      <a class="button" href="/cdn-cgi/access/logout">Вийти із захищеного середовища</a>
     </main>
+    <footer>Реєстр ще не запущено. Персональні дані не завантажено.</footer>
   </body>
 </html>
