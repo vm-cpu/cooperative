@@ -8,4 +8,6 @@
     "binding": "ASSETS",
   },
   "observability": { "enabled": true },
+  // Preview deployments for pull requests (Cloudflare Workers Builds runs `wrangler preview`)
+  "previews": {},
 }
