@@ -1,6 +1,6 @@
 # cooperative
 
-Проєкт на Cloudflare Workers (статичні файли з `public/` + API у `src/index.js`).
+PWA для гаражно-будівельного кооперативу на Cloudflare Workers. Опис проєкту і план: [docs/PROJECT.md](docs/PROJECT.md).
 
 ## Локальний запуск
 
