@@ -5,7 +5,7 @@
   "compatibility_date": "2026-11-01",
   "assets": {
     "directory": "./public",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
   },
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
 }

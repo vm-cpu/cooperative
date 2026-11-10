@@ -1,3 +1,27 @@
+# Залежності та збірка
 node_modules/
 .wrangler/
+coverage/
+dist/
+
+# Секрети — ніколи не комітити
+.env
+.env.*
 .dev.vars
+.dev.vars.*
+*.pem
+*.key
+
+# Персональні дані членів кооперативу — ніколи не комітити
+data/
+*.csv
+*.xlsx
+*.xls
+*.docx
+*.doc
+*.pdf
+scans/
+
+# Системне
+.DS_Store
+Thumbs.db
