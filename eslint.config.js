@@ -8,7 +8,7 @@ export default [
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
-      globals: { ...globals.serviceworker, ...globals.browser },
+      globals: { ...globals.serviceworker, ...globals.browser, HTMLRewriter: "readonly" },
     },
     rules: {
       "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
