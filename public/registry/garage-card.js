@@ -2,6 +2,11 @@ import { garageExamples } from "./garage-examples.js";
 
 const currency = new Intl.NumberFormat("uk-UA", { style: "currency", currency: "UAH" });
 const month = new Intl.DateTimeFormat("uk-UA", { month: "long", year: "numeric", timeZone: "UTC" });
+const decimal = new Intl.NumberFormat("uk-UA", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+const tableAmount = (amount) => decimal.format(amount / 100);
 const money = (amount) => currency.format(amount / 100);
 const dateLabel = (date) => date.split("-").reverse().join(".");
 const periodLabel = (period) =>
@@ -37,7 +42,7 @@ function storedPayments(id) {
 function table(caption, headers, rows, escape) {
   return `<table class="garage-table"><caption>${escape(caption)}</caption>
     <thead><tr>${headers.map((value) => `<th scope="col">${escape(value)}</th>`).join("")}</tr></thead>
-    <tbody>${rows.map((row) => `<tr>${row.map((value) => `<td>${escape(value)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+    <tbody>${rows.map((row) => `<tr>${row.map((value, index) => `<td${["Дата", "Орендує з", "Сума, грн"].includes(headers[index]) ? ' class="garage-table-value"' : ""}>${escape(value)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
 }
 
 function category(name, body) {
@@ -49,10 +54,10 @@ export function renderGarageExample(host, garage, owner, ownerUrl, label, escape
   const contributions = (saved) =>
     table(
       "Історія членських внесків",
-      ["Дата", "Сума", "За період"],
+      ["Дата", "Сума, грн", "За період"],
       [...saved.slice().reverse(), ...example.contributions]
         .sort((a, b) => b.date.localeCompare(a.date))
-        .map((item) => [dateLabel(item.date), money(item.amount), periodLabel(item.period)]),
+        .map((item) => [dateLabel(item.date), tableAmount(item.amount), periodLabel(item.period)]),
       escape,
     );
   const receipts = [
@@ -126,10 +131,10 @@ export function renderGarageExample(host, garage, owner, ownerUrl, label, escape
       )}
       ${table(
         "Оплати за електрику",
-        ["Дата", "Сума", "За період"],
+        ["Дата", "Сума, грн", "За період"],
         example.electricity.map((item) => [
           dateLabel(item.date),
-          money(item.amount),
+          tableAmount(item.amount),
           periodLabel(item.period),
         ]),
         escape,
@@ -141,8 +146,8 @@ export function renderGarageExample(host, garage, owner, ownerUrl, label, escape
       `
       ${table(
         "Історія квитанцій",
-        ["Дата", "Номер", "Сума"],
-        receipts.map((item) => [dateLabel(item.date), item.receipt, money(item.amount)]),
+        ["Дата", "Номер", "Сума, грн"],
+        receipts.map((item) => [dateLabel(item.date), item.receipt, tableAmount(item.amount)]),
         escape,
       )}
       <div class="garage-receipts">${receipts
