@@ -659,8 +659,8 @@ label {
   font-size: 0.9rem;
 }
 .map-viewport {
-  height: min(75vh, 850px);
-  min-height: 420px;
+  height: clamp(280px, 60vw, 720px);
+  min-height: 280px;
   border: 2px solid var(--line);
   border-radius: 0.6rem;
   overflow: hidden;

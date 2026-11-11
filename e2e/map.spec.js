@@ -111,6 +111,11 @@ test("map zoom and rotation preserve a searched garage at the center; drag and r
     .toBeGreaterThan(500);
   await centered();
   await viewport.scrollIntoViewIfNeeded();
+  await expect
+    .poll(() =>
+      viewport.evaluate((el) => el.querySelector("svg").viewBox.baseVal.width === el.clientWidth),
+    )
+    .toBe(true);
   const before = await cell.boundingBox(),
     area = await viewport.boundingBox();
   await page.mouse.move(area.x + area.width / 2, area.y + area.height / 2);
@@ -118,6 +123,7 @@ test("map zoom and rotation preserve a searched garage at the center; drag and r
   await page.mouse.move(area.x + area.width / 2 + 50, area.y + area.height / 2 + 30, { steps: 5 });
   await page.mouse.up();
   const after = await cell.boundingBox();
+  expect(await viewport.evaluate((el) => [el.scrollLeft, el.scrollTop])).toEqual([0, 0]);
   expect(after.x - before.x).toBeCloseTo(50, 0);
   expect(after.y - before.y).toBeCloseTo(30, 0);
   await page.getByRole("button", { name: "Початковий вигляд", exact: true }).click();

@@ -265,6 +265,10 @@ export function renderMap(host, data, filters, matches, detailUrl) {
     }
   });
   viewport.addEventListener("pointerdown", (event) => {
+    // Native focus on a zoomed SVG child can scroll the clipped viewport itself.
+    // Keep panning exclusively in the camera transform and focus without scrolling.
+    event.preventDefault();
+    viewport.focus({ preventScroll: true });
     dragged = false;
     drag = { x: event.clientX, y: event.clientY, panX, panY };
   });
