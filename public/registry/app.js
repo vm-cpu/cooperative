@@ -101,14 +101,14 @@ function listPage(view, params) {
     ) +
     `<form class="filters" id="filters" role="search" aria-label="Пошук ${garages ? "гаражів" : "власників"}"><div class="fields"><label for="search">${garages ? "Номер гаража або ім’я власника" : "Ім’я власника"}<input id="search" name="q" type="search" autocomplete="off" value="${escape(filters.q)}" placeholder="${garages ? "Наприклад, 1-01" : "Наприклад, Тестова"}" aria-describedby="search-hint" /><span id="search-hint" class="hint">${garages ? "Можна ввести частину номера або імені." : "Однакові імена можуть належати різним людям."}</span></label>${
       garages
-        ? `<label for="row">Ряд<select id="row" name="row"><option value="">Усі ряди</option>${rowSummary(
+        ? `<div><label for="row">Ряд</label><select id="row" name="row"><option value="">Усі ряди</option>${rowSummary(
             data,
           )
             .map(
               (r) =>
                 `<option value="${escape(r.row)}" ${r.row === filters.row ? "selected" : ""}>Ряд ${escape(r.row)}</option>`,
             )
-            .join("")}</select></label>`
+            .join("")}</select></div>`
         : ""
     }</div>
     <div class="filter-bottom">${garages ? `<label class="check"><input type="checkbox" name="missing" ${filters.missing ? "checked" : ""}/>Без власника</label><label class="check"><input type="checkbox" name="technical" ${filters.technical ? "checked" : ""}/>Технічні бокси</label>` : `<label class="check"><input type="checkbox" name="multiple" ${filters.multiple ? "checked" : ""}/>Кілька гаражів</label>`}<button type="button" data-reset>Скинути фільтри</button></div></form>

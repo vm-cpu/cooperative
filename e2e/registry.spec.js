@@ -70,7 +70,7 @@ test("raw HTML owner name stays text in list and card", async ({ page }) => {
   await page.route("**/registry/demo.json", async (route) => {
     const response = await route.fetch();
     const data = await response.json();
-    data.owners[0].name = name;
+    data.owners[0].source.name = name;
     await route.fulfill({ response, json: data });
   });
   await page.goto("/#owners");
