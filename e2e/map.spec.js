@@ -63,5 +63,5 @@ for (const width of [375, 1280])
         .violations,
     ).toEqual([]);
     await page.locator(".map-controls").scrollIntoViewIfNeeded();
-    await page.screenshot({ path: `test-results/map-${width}.png` });
+    await page.screenshot({ path: `test-results/map-${width}.png`, fullPage: true });
   });
