@@ -10,6 +10,8 @@ for (const width of [320, 375, 768, 1280])
     await page.getByRole("link", { name: "Відкрити картку гаража 1-01", exact: true }).click();
     await page.getByRole("link", { name: "Відкрити картку власника", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Гаражі власника" })).toBeVisible();
+    await page.locator(".record-link").filter({ hasNotText: "Гараж 1-01" }).first().click();
+    await expect(page.getByRole("heading", { name: "Про гараж", exact: true })).toBeVisible();
     await page.getByRole("link", { name: "Повернутися до списку" }).click();
     await expect(page.getByLabel("Номер гаража або ім’я власника")).toHaveValue("1-01");
     await page.reload();
@@ -51,9 +53,12 @@ for (const target of ["list", "card"]) {
     await expect(page.locator("#main")).toBeFocused();
     await expect(page).toHaveURL(before);
     await expect(page.locator("h1")).toHaveText(heading);
-    expect(
-      await page.locator("#main").evaluate((el) => Math.abs(el.getBoundingClientRect().top)),
-    ).toBeLessThan(2);
+    const scrollError = await page.locator("#main").evaluate((el) => {
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      const maximum = document.documentElement.scrollHeight - window.innerHeight;
+      return Math.abs(window.scrollY - Math.min(top, maximum));
+    });
+    expect(scrollError).toBeLessThan(2);
     if (target === "card") await page.getByRole("link", { name: "Повернутися до списку" }).click();
     await expect(page.locator("#search")).toHaveValue("1-01");
     await expect(page.locator("#row")).toHaveValue("1");
