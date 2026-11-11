@@ -19,3 +19,65 @@ describe("site plan references", () => {
     expect(findRegistryGarage(data, cell)).toBeNull();
   });
 });
+
+// Adjacent walls may touch, but buildings must never cover one another.
+function overlaps(a, b) {
+  for (const polygon of [a, b]) {
+    for (let i = 0; i < polygon.length; i++) {
+      const p = polygon[i],
+        q = polygon[(i + 1) % polygon.length];
+      const axis = [-(q[1] - p[1]), q[0] - p[0]];
+      const project = (points) => points.map(([x, y]) => x * axis[0] + y * axis[1]);
+      const aa = project(a),
+        bb = project(b);
+      if (Math.min(...aa) >= Math.max(...bb) - 0.001 || Math.min(...bb) >= Math.max(...aa) - 0.001)
+        return false;
+    }
+  }
+  return true;
+}
+it("keeps every building and pit separate from other buildings", () => {
+  const shapes = [
+    ...planCells,
+    ...landmarks.map((l) => ({
+      id: l.id,
+      points: [
+        [l.x - l.w / 2, l.y - l.h / 2],
+        [l.x + l.w / 2, l.y - l.h / 2],
+        [l.x + l.w / 2, l.y + l.h / 2],
+        [l.x - l.w / 2, l.y + l.h / 2],
+      ],
+    })),
+  ];
+  const collisions = [];
+  for (let i = 0; i < shapes.length; i++)
+    for (let j = i + 1; j < shapes.length; j++) {
+      if (overlaps(shapes[i].points, shapes[j].points))
+        collisions.push(`${shapes[i].id} / ${shapes[j].id}`);
+    }
+  expect(collisions).toEqual([]);
+});
+it("starts with horizontal internal rows and the entrance below them", () => {
+  for (const row of [
+    "r2-left",
+    "r2-right",
+    "r3-left",
+    "r3-right",
+    "r5-left",
+    "r5-right",
+    "r6-left",
+    "r6-right",
+    "r7-left",
+    "r7-right",
+    "r8",
+  ]) {
+    const cells = planCells.filter((c) => c.id.startsWith(row + "-"));
+    expect(Math.max(...cells.map((c) => c.y)) - Math.min(...cells.map((c) => c.y))).toBeLessThan(
+      0.001,
+    );
+  }
+  const gate = landmarks.find((l) => l.id === "gate");
+  expect(gate.y).toBeGreaterThan(
+    Math.max(...planCells.filter((c) => c.id.startsWith("r2-")).map((c) => c.y)),
+  );
+});

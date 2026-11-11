@@ -700,7 +700,7 @@ label {
 }
 .map-cell text {
   fill: #182e25;
-  font-size: 15px;
+  font-size: 11px;
   font-weight: 650;
   pointer-events: none;
 }
@@ -748,4 +748,15 @@ label {
   paint-order: stroke;
   stroke: #edf2eb;
   stroke-width: 4px;
+}
+
+.map-row,
+.map-landmark text,
+.map-entrance {
+  pointer-events: none;
+}
+.map-entrance {
+  font-size: 24px;
+  fill: #173c54;
+  font-weight: 700;
 }

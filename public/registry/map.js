@@ -1,6 +1,17 @@
-import { planCells, landmarks, planLabel, findRegistryGarage } from "./site-plan.js";
+import {
+  planCells,
+  landmarks,
+  planLabel,
+  findRegistryGarage,
+  rowLabels,
+  entrance,
+} from "./site-plan.js";
+import { fitScale, planCenter, rotatePoint } from "./map-camera.js";
 const SVG = "http://www.w3.org/2000/svg";
-const DEFAULT_ANGLE = -20;
+const DEFAULT_ANGLE = 0;
+// Versioned preference: the old coordinate system used a different zero direction.
+const ANGLE_KEY = "cooperative-map-angle-v2";
+let disposeMap = () => {};
 let camera;
 function node(name, attributes = {}, text) {
   const element = document.createElementNS(SVG, name);
@@ -9,6 +20,7 @@ function node(name, attributes = {}, text) {
   return element;
 }
 export function renderMap(host, data, filters, matches, detailUrl) {
+  disposeMap();
   host.innerHTML = `<div class="map-controls" aria-label="Керування картою">
     <button type="button" data-map="in">Збільшити</button><button type="button" data-map="out">Зменшити</button>
     <button type="button" data-map="left">↶ Ліворуч</button><button type="button" data-map="right">Праворуч ↷</button>
@@ -20,7 +32,7 @@ export function renderMap(host, data, filters, matches, detailUrl) {
   const viewport = host.querySelector(".map-viewport");
   const selection = host.querySelector(".map-selection");
   const svg = node("svg", {
-    viewBox: "0 0 1800 1900",
+    viewBox: "0 0 1000 600",
     role: "group",
     "aria-label": "Схема розташування гаражів",
   });
@@ -35,7 +47,7 @@ export function renderMap(host, data, filters, matches, detailUrl) {
   let drag;
   let dragged = false;
   try {
-    angle = Number(localStorage.getItem("cooperative-map-angle") ?? DEFAULT_ANGLE);
+    angle = Number(localStorage.getItem(ANGLE_KEY) ?? DEFAULT_ANGLE);
   } catch {
     /* Storage can be disabled. */
   }
@@ -131,18 +143,23 @@ export function renderMap(host, data, filters, matches, detailUrl) {
     world.append(group);
     garageNodes.push({ cell, match, element: group });
   }
-  for (const row of ["1", "2", "3", "5", "6", "7", "8", "9", "10"]) {
-    const cell = planCells.find((c) => c.row === row);
+  for (const item of rowLabels) {
     const label = node(
       "text",
-      { x: cell.x, y: cell.y - 45, class: "map-row", "text-anchor": "middle" },
-      `Ряд ${row}`,
+      {
+        x: item.x,
+        y: item.y,
+        class: "map-row",
+        "text-anchor": "middle",
+        "dominant-baseline": "central",
+      },
+      item.name,
     );
-    labels.push({ element: label, x: cell.x, y: cell.y - 45 });
+    labels.push({ element: label, x: item.x, y: item.y });
     world.append(label);
   }
   for (const item of landmarks) {
-    const group = node("g", { class: "map-landmark" });
+    const group = node("g", { class: "map-landmark", "data-landmark": item.id });
     group.append(
       node("rect", {
         x: item.x - item.w / 2,
@@ -157,33 +174,48 @@ export function renderMap(host, data, filters, matches, detailUrl) {
       { x: item.x, y: item.y, "text-anchor": "middle", "dominant-baseline": "central" },
       item.name,
     );
-    labels.push({ element: label, x: item.x, y: item.y });
+    labels.push({ element: label, x: item.x, y: item.y, landmark: item });
     group.append(label);
     world.append(group);
   }
-  const entrance = node("text", { x: 400, y: 1250, "text-anchor": "middle" }, "В’ЇЗД ↑");
-  labels.push({ element: entrance, x: 400, y: 1250 });
-  world.append(entrance);
+  const entranceLabel = node(
+    "text",
+    { x: entrance.x, y: entrance.y, class: "map-entrance", "text-anchor": "middle" },
+    "В’ЇЗД ↑",
+  );
+  labels.push({ element: entranceLabel, x: entrance.x, y: entrance.y });
+  world.append(entranceLabel);
+  let width = viewport.clientWidth,
+    height = viewport.clientHeight;
+  const scale = () => fitScale(width, height, angle) * zoom;
   function centerCell(cell) {
-    const radians = (angle * Math.PI) / 180;
-    const x = cell.x - 550,
-      y = cell.y - 800;
-    panX = -zoom * (x * Math.cos(radians) - y * Math.sin(radians));
-    panY = -zoom * (x * Math.sin(radians) + y * Math.cos(radians));
+    const position = rotatePoint(cell.x - planCenter.x, cell.y - planCenter.y, angle);
+    panX = -scale() * position.x;
+    panY = -scale() * position.y;
     update();
   }
   function update() {
     camera = { angle, zoom, panX, panY };
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
     world.setAttribute(
       "transform",
-      `translate(${900 + panX} ${950 + panY}) scale(${zoom}) rotate(${angle}) translate(-550 -800)`,
+      `translate(${width / 2 + panX} ${height / 2 + panY}) scale(${scale()}) rotate(${angle}) translate(${-planCenter.x} ${-planCenter.y})`,
     );
-    for (const label of labels)
+    for (const label of labels) {
       label.element.setAttribute("transform", `rotate(${-angle} ${label.x} ${label.y})`);
+      if (label.landmark) {
+        const { w, h, name } = label.landmark;
+        const radians = (angle * Math.PI) / 180;
+        const available = Math.abs(w * Math.cos(radians)) + Math.abs(h * Math.sin(radians));
+        label.element.style.fontSize = `${Math.min(17, (available - 6) / (name.length * 0.65))}px`;
+      }
+    }
     host.querySelector('[data-map="in"]').disabled = zoom >= 20;
     host.querySelector('[data-map="out"]').disabled = zoom <= 1;
   }
   function action(name) {
+    const oldAngle = angle,
+      oldScale = scale();
     if (name === "in") zoom = Math.min(20, zoom * 1.5);
     if (name === "out") zoom = Math.max(1, zoom / 1.5);
     if (name === "left") angle -= 90;
@@ -195,8 +227,13 @@ export function renderMap(host, data, filters, matches, detailUrl) {
       panY = 0;
     }
     angle = (angle + 360) % 360;
+    if (name !== "reset") {
+      const rotatedPan = rotatePoint(panX, panY, angle - oldAngle);
+      panX = (rotatedPan.x * scale()) / oldScale;
+      panY = (rotatedPan.y * scale()) / oldScale;
+    }
     try {
-      localStorage.setItem("cooperative-map-angle", String(angle));
+      localStorage.setItem(ANGLE_KEY, String(angle));
     } catch {
       /* Optional preference. */
     }
@@ -240,9 +277,8 @@ export function renderMap(host, data, filters, matches, detailUrl) {
       viewport.setPointerCapture(event.pointerId);
     }
     if (dragged) {
-      const factor = Math.max(1800 / viewport.clientWidth, 1900 / viewport.clientHeight);
-      panX = drag.panX + dx * factor;
-      panY = drag.panY + dy * factor;
+      panX = drag.panX + dx;
+      panY = drag.panY + dy;
       update();
     }
   });
@@ -255,7 +291,7 @@ export function renderMap(host, data, filters, matches, detailUrl) {
   });
   const visibleMatches = garageNodes.filter((g) => g.match && g.cell.number !== null);
   if (hasFilter && visibleMatches.length === 1) {
-    zoom = 6;
+    zoom = Math.min(20, Math.max(6, 2 / fitScale(width, height, angle)));
     centerCell(visibleMatches[0].cell);
     visibleMatches[0].element.setAttribute("tabindex", "0");
     garageNodes[0].element.setAttribute(
@@ -264,6 +300,17 @@ export function renderMap(host, data, filters, matches, detailUrl) {
     );
   }
   update();
+  const observer = new ResizeObserver(() => {
+    if (!viewport.isConnected) return;
+    const oldScale = scale();
+    width = viewport.clientWidth;
+    height = viewport.clientHeight;
+    panX *= scale() / oldScale;
+    panY *= scale() / oldScale;
+    update();
+  });
+  observer.observe(viewport);
+  disposeMap = () => observer.disconnect();
   const count = garageNodes.filter((g) => g.match && g.cell.number !== null).length;
   const status = document.createElement("p");
   status.className = "map-count";
