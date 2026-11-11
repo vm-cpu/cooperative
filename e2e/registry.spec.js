@@ -45,6 +45,7 @@ for (const target of ["list", "card"]) {
     await expect(page.locator("#search")).toHaveValue("1-01");
     if (target === "card") {
       await page.getByRole("link", { name: "Відкрити картку гаража 1-01", exact: true }).click();
+      await expect(page.locator("h1")).toHaveText("Гараж 1-01");
     }
     const before = page.url();
     const heading = await page.locator("h1").textContent();
@@ -53,12 +54,15 @@ for (const target of ["list", "card"]) {
     await expect(page.locator("#main")).toBeFocused();
     await expect(page).toHaveURL(before);
     await expect(page.locator("h1")).toHaveText(heading);
-    const scrollError = await page.locator("#main").evaluate((el) => {
-      const top = el.getBoundingClientRect().top + window.scrollY;
-      const maximum = document.documentElement.scrollHeight - window.innerHeight;
-      return Math.abs(window.scrollY - Math.min(top, maximum));
-    });
-    expect(scrollError).toBeLessThan(2);
+    await expect
+      .poll(() =>
+        page.locator("#main").evaluate((el) => {
+          const top = el.getBoundingClientRect().top + window.scrollY;
+          const maximum = document.documentElement.scrollHeight - window.innerHeight;
+          return Math.abs(window.scrollY - Math.min(top, maximum));
+        }),
+      )
+      .toBeLessThan(2);
     if (target === "card") await page.getByRole("link", { name: "Повернутися до списку" }).click();
     await expect(page.locator("#search")).toHaveValue("1-01");
     await expect(page.locator("#row")).toHaveValue("1");
