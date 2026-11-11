@@ -505,8 +505,8 @@ label {
   .site-header {
     flex-direction: column;
     align-items: stretch;
-    gap: 0.7rem;
-    padding: 0.8rem;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem;
   }
   .brand {
     align-self: flex-start;
@@ -520,7 +520,7 @@ label {
     font-size: 0.9rem;
   }
   .demo-notice {
-    padding: 0.7rem 0.8rem;
+    padding: 0.35rem 0.8rem;
     display: block;
   }
   .demo-notice span {
@@ -537,7 +537,7 @@ label {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.4rem;
-    padding: 0.7rem 0.8rem;
+    padding: 0.35rem 0.8rem;
     border-right: 0;
     border-bottom: 1px solid var(--line);
     background: white;
@@ -546,7 +546,7 @@ label {
     margin: 0;
     border: 1px solid var(--line);
     font-size: 0.95rem;
-    padding: 0.6rem;
+    padding: 0.3rem;
   }
   .navigation a span {
     display: none;
@@ -556,7 +556,7 @@ label {
     display: none;
   }
   main {
-    padding: 1.2rem 0.8rem;
+    padding: 0.6rem 0.8rem;
   }
   .heading {
     display: block;
@@ -606,11 +606,22 @@ label {
   footer {
     padding: 1rem 0.8rem;
   }
-  .large-text .navigation {
-    grid-template-columns: 1fr;
+  .brand-caption,
+  .eyebrow,
+  .heading .muted {
+    display: none;
   }
-  .large-text .header-actions {
-    grid-template-columns: 1fr;
+  .heading {
+    margin-bottom: 0.4rem;
+  }
+  .heading h1 {
+    margin-bottom: 0.2rem;
+  }
+  .heading .total {
+    padding: 0.1rem 0.4rem;
+  }
+  .filters {
+    margin-top: 0.4rem;
   }
 }
 @media (prefers-reduced-motion: no-preference) {

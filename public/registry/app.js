@@ -234,7 +234,13 @@ screen.addEventListener("click", (e) => {
 });
 document.addEventListener("click", (e) => {
   const link = e.target.closest('a[href^="#"]');
-  if (!link || link.classList.contains("skip")) return;
+  if (!link) return;
+  if (link.classList.contains("skip")) {
+    e.preventDefault();
+    main.focus({ preventScroll: true });
+    main.scrollIntoView({ block: "start", behavior: "instant" });
+    return;
+  }
   const record = link.closest(".record")?.querySelector("[data-record]")?.dataset.record;
   positions.set(activeUrl, { y: window.scrollY, record });
 });
