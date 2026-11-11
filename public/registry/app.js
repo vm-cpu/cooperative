@@ -1,3 +1,4 @@
+import { renderMap } from "./map.js";
 import {
   prepareData,
   filterGarages,
@@ -91,6 +92,18 @@ function ownerResults(filters) {
 function listPage(view, params) {
   const filters = readFilters(params);
   const garages = view === "garages";
+  const mapMode = garages && params.get("mode") === "map";
+  const modes = garages
+    ? `<div class="view-switch" role="group" aria-label="Вигляд гаражів"><a class="button ${mapMode ? "quiet" : ""}" href="${escape(url("garages", { ...filters, mode: "list" }))}" ${!mapMode ? 'aria-current="true"' : ""}>Список</a><a class="button ${mapMode ? "" : "quiet"}" href="${escape(url("garages", { ...filters, mode: "map" }))}" ${mapMode ? 'aria-current="true"' : ""}>Карта</a></div>`
+    : "";
+  const showMap = (values) =>
+    renderMap(
+      document.querySelector("#results"),
+      data,
+      values,
+      filterGarages(data, values),
+      detailUrl,
+    );
   screen.innerHTML =
     title(
       views[view],
@@ -99,6 +112,7 @@ function listPage(view, params) {
         : "Знайдіть власника та всі його гаражі.",
       `<span class="total">${garages ? data.garages.length : data.owners.length} ${garages ? "боксів" : "власників"}</span>`,
     ) +
+    modes +
     `<form class="filters" id="filters" role="search" aria-label="Пошук ${garages ? "гаражів" : "власників"}"><div class="fields"><label for="search">${garages ? "Номер гаража або ім’я власника" : "Ім’я власника"}<input id="search" name="q" type="search" autocomplete="off" value="${escape(filters.q)}" placeholder="${garages ? "Наприклад, 1-01" : "Наприклад, Тестова"}" aria-describedby="search-hint" /><span id="search-hint" class="hint">${garages ? "Можна ввести частину номера або імені." : "Однакові імена можуть належати різним людям."}</span></label>${
       garages
         ? `<div><label for="row">Ряд</label><select id="row" name="row"><option value="">Усі ряди</option>${rowSummary(
@@ -112,7 +126,8 @@ function listPage(view, params) {
         : ""
     }</div>
     <div class="filter-bottom">${garages ? `<label class="check"><input type="checkbox" name="missing" ${filters.missing ? "checked" : ""}/>Без власника</label><label class="check"><input type="checkbox" name="technical" ${filters.technical ? "checked" : ""}/>Технічні бокси</label>` : `<label class="check"><input type="checkbox" name="multiple" ${filters.multiple ? "checked" : ""}/>Кілька гаражів</label>`}<button type="button" data-reset>Скинути фільтри</button></div></form>
-    ${filters.issue ? `<p class="notice">Перевірка: ${escape(issueLabels[filters.issue] || "невідома категорія")}. Щоб бачити всі гаражі, скиньте фільтри.</p>` : ""}<section id="results" aria-label="Результати пошуку">${garages ? garageResults(filters) : ownerResults(filters)}</section>`;
+    ${filters.issue ? `<p class="notice">Перевірка: ${escape(issueLabels[filters.issue] || "невідома категорія")}. Щоб бачити всі гаражі, скиньте фільтри.</p>` : ""}<section id="results" aria-label="Результати пошуку">${mapMode ? "" : garages ? garageResults(filters) : ownerResults(filters)}</section>`;
+  if (mapMode) showMap(filters);
   const form = document.querySelector("#filters");
   const update = () => {
     const values = new FormData(form);
@@ -123,13 +138,24 @@ function listPage(view, params) {
       technical: values.has("technical"),
       multiple: values.has("multiple"),
       issue: filters.issue,
+      mode: mapMode ? "map" : params.get("mode"),
     };
     history.replaceState(null, "", url(view, next));
     activeUrl = location.href;
-    document.querySelector("#results").innerHTML = garages
-      ? garageResults(next)
-      : ownerResults(next);
-    announce(document.querySelector("#result-count").textContent);
+    if (mapMode) showMap(next);
+    else
+      document.querySelector("#results").innerHTML = garages
+        ? garageResults(next)
+        : ownerResults(next);
+    document.querySelectorAll(".view-switch a").forEach((link) => {
+      const mode = new URLSearchParams(link.hash.split("?")[1]).get("mode");
+      link.href = url("garages", { ...next, mode });
+    });
+    announce(
+      document.querySelector("#result-count")?.textContent ||
+        document.querySelector(".map-count")?.textContent ||
+        "Нічого не знайдено",
+    );
   };
   form.addEventListener("input", update);
   form.addEventListener("submit", (e) => {
@@ -223,8 +249,8 @@ function render(focus = true) {
 }
 screen.addEventListener("click", (e) => {
   if (e.target.closest("[data-reset]")) {
-    const { view } = route();
-    history.replaceState(null, "", url(view));
+    const { view, params } = route();
+    history.replaceState(null, "", url(view, { mode: params.get("mode") }));
     activeUrl = location.href;
     render(false);
     document.querySelector("#search")?.focus();
