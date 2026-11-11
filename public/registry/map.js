@@ -13,6 +13,7 @@ const DEFAULT_ANGLE = 0;
 const ANGLE_KEY = "cooperative-map-angle-v2";
 let disposeMap = () => {};
 let camera;
+let previousSearch;
 function node(name, attributes = {}, text) {
   const element = document.createElementNS(SVG, name);
   for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, value);
@@ -294,9 +295,20 @@ export function renderMap(host, data, filters, matches, detailUrl) {
     dragged = false;
   });
   const visibleMatches = garageNodes.filter((g) => g.match && g.cell.number !== null);
+  const search = JSON.stringify([
+    query,
+    filters.row || "",
+    Boolean(filters.missing),
+    Boolean(filters.technical),
+    filters.issue || "",
+  ]);
+  const searchChanged = search !== previousSearch;
+  previousSearch = search;
   if (hasFilter && visibleMatches.length === 1) {
-    zoom = Math.min(20, Math.max(6, 2 / fitScale(width, height, angle)));
-    centerCell(visibleMatches[0].cell);
+    if (searchChanged) {
+      zoom = Math.min(20, Math.max(6, 2 / fitScale(width, height, angle)));
+      centerCell(visibleMatches[0].cell);
+    }
     visibleMatches[0].element.setAttribute("tabindex", "0");
     garageNodes[0].element.setAttribute(
       "tabindex",
