@@ -30,7 +30,7 @@ test("mobile card tables, receipt and local contribution payment", async ({ page
   await expect(card.getByText("березень 2027 р.", { exact: true })).toBeVisible();
   await expect(card.locator("table").first()).toBeHidden();
   for (const name of ["Власник і орендарі", "Внески", "Електрика", "Квитанції"]) {
-    await card.getByText(name, { exact: true }).click();
+    await card.locator(".garage-category > summary").filter({ hasText: name }).click();
   }
   await card.getByText("Відкрити квитанцію №Е-001", { exact: true }).click();
   await expect(card.locator(".garage-receipts details[open]")).toContainText(
