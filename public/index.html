@@ -4,40 +4,54 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex,nofollow" />
-    <title>ГБК «Ювілейний» — підготовка застосунку</title>
+    <meta name="color-scheme" content="light" />
+    <title>Гаражі — ГБК «Ювілейний»</title>
     <link rel="stylesheet" href="/styles.css" />
     <script src="/preferences.js" defer></script>
+    <script type="module" src="/registry/app.js"></script>
   </head>
   <body>
     <a class="skip" href="#main">Перейти до змісту</a>
-    <header>
-      <span>ГБК «Ювілейний»</span>
-      <label for="theme"
-        >Тема оформлення
-        <select id="theme">
-          <option value="system">Як на пристрої</option>
-          <option value="light">Світла</option>
-          <option value="dark">Темна</option>
-        </select>
-      </label>
+    <header class="site-header">
+      <a class="brand" href="#garages"
+        ><span class="brand-mark" aria-hidden="true">Ю</span
+        ><span>ГБК «Ювілейний»<span class="brand-caption">Довідник кооперативу</span></span></a
+      >
+      <div class="header-actions">
+        <button id="text-size" type="button" aria-pressed="false">Збільшити текст</button
+        ><a class="button quiet" href="/cdn-cgi/access/logout">Вийти</a>
+      </div>
     </header>
-    <main id="main">
-      <p class="badge" data-environment>Тестове середовище</p>
-      <h1>Кооператив: починаємо з основи</h1>
-      <p data-description>Застосунок готується до запуску.</p>
-      <section aria-labelledby="next">
-        <h2 id="next">Що буде далі</h2>
-        <p>
-          У першій ітерації тут з’являться списки гаражів і власників, перегляд за рядами та пошук.
-          План розміщення гаражів додамо окремо.
-        </p>
-        <p>
-          Поки перевірте, чи зручно читати цю сторінку на телефоні, збільшувати текст і перемикати
-          тему. Збережіть посилання та поверніться після повідомлення про оновлення.
-        </p>
-      </section>
-      <a class="button" href="/cdn-cgi/access/logout">Вийти із захищеного середовища</a>
-    </main>
-    <footer>Реєстр ще не запущено. Персональні дані не завантажено.</footer>
+    <div class="demo-notice">
+      <strong>Вигадані дані · Лише перегляд</strong>
+    </div>
+    <div class="layout">
+      <nav class="navigation" aria-label="Розділи довідника">
+        <p class="nav-caption">Довідник</p>
+        <a href="#garages" data-view="garages"><span aria-hidden="true">▤</span>Гаражі</a>
+        <a href="#owners" data-view="owners"><span aria-hidden="true">♧</span>Власники</a>
+        <a href="#rows" data-view="rows"><span aria-hidden="true">▦</span>Ряди</a>
+        <a href="#quality" data-view="quality"><span aria-hidden="true">☑</span>Якість даних</a>
+        <p class="nav-note">План території додамо після отримання карти.</p>
+      </nav>
+      <main id="main" tabindex="-1">
+        <div id="connection" class="notice" role="status" hidden>
+          Немає інтернету. Уже завантажені вигадані дані можна переглядати. Для оновлення потрібне
+          з’єднання.
+        </div>
+        <div id="screen" aria-busy="true">
+          <h1>Відкриваємо довідник</h1>
+          <p role="status">Завантажуємо вигадані дані…</p>
+        </div>
+        <noscript
+          ><p>
+            Для довідника потрібен JavaScript. Увімкніть його в налаштуваннях браузера та оновіть
+            сторінку.
+          </p></noscript
+        >
+      </main>
+    </div>
+    <footer>Кооператив · Тестова версія довідника · Без реальних даних</footer>
+    <div id="announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
   </body>
 </html>

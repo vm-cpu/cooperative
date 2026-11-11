@@ -25,3 +25,6 @@ scans/
 # Системне
 .DS_Store
 Thumbs.db
+
+playwright-report/
+test-results/
