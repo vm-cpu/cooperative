@@ -64,4 +64,10 @@ test("mobile card tables, receipt and local contribution payment", async ({ page
   await expect(card.getByRole("table", { name: "Історія членських внесків" })).toContainText(
     "123,45",
   );
+  for (const name of ["Власник і орендарі", "Електрика", "Квитанції"]) {
+    await card.locator(".garage-category > summary").filter({ hasText: name }).click();
+  }
+  await page.screenshot({ path: "test-results/garage-card-phone.png", fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.screenshot({ path: "test-results/garage-card-desktop.png", fullPage: true });
 });
