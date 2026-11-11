@@ -8,10 +8,11 @@ for (const width of [320, 375, 768, 1280])
     await page.screenshot({ path: `test-results/registry-${width}.png`, fullPage: true });
     await page.getByLabel("Номер гаража або ім’я власника").fill("1-01");
     await page.getByRole("link", { name: "Відкрити картку гаража 1-01", exact: true }).click();
+    await page.getByText("Власник і орендарі", { exact: true }).click();
     await page.getByRole("link", { name: "Відкрити картку власника", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Гаражі власника" })).toBeVisible();
     await page.locator(".record-link").filter({ hasNotText: "Гараж 1-01" }).first().click();
-    await expect(page.getByRole("heading", { name: "Про гараж", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Гараж 1-2", exact: true })).toBeVisible();
     await page.getByRole("link", { name: "Повернутися до списку" }).click();
     await expect(page.getByLabel("Номер гаража або ім’я власника")).toHaveValue("1-01");
     await page.reload();

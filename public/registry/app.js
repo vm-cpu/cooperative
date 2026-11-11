@@ -1,3 +1,5 @@
+import { garageExamples } from "./garage-examples.js";
+import { renderGarageExample } from "./garage-card.js";
 import { renderMap } from "./map.js";
 import {
   prepareData,
@@ -190,12 +192,27 @@ function qualityPage() {
 }
 function backLink(params) {
   const origin = safeOrigin(params.get("from"));
-  return `<a class="back" data-back href="${escape(origin)}">← Повернутися до списку</a>`;
+  const map =
+    origin.startsWith("#garages?") &&
+    new URLSearchParams(origin.split("?")[1]).get("mode") === "map";
+  return `<a class="back" data-back href="${escape(origin)}">← Повернутися до ${map ? "карти" : "списку"}</a>`;
 }
 function garagePage(id, params) {
   const g = data.garages.find((g) => g.id === id);
   if (!g) return missingPage();
   const owner = data.ownerById.get(g.ownerId);
+  if (owner && garageExamples.has(id)) {
+    screen.innerHTML = `<div class="details">${backLink(params)}${title(`Гараж ${label(g)}`, "Картка гаража · Вигадані дані")}<div id="garage-example"></div></div>`;
+    renderGarageExample(
+      screen.querySelector("#garage-example"),
+      g,
+      owner,
+      detailUrl("owner", owner.id),
+      garageLabel(g),
+      escape,
+    );
+    return;
+  }
   const issues = qualityIssues(data).filter((i) => i.garageIds.includes(id));
   screen.innerHTML = `<div class="details">${backLink(params)}${title(`Гараж ${label(g)}`, "Картка гаража · Вигадані дані")}<section class="panel"><h2>Про гараж</h2><dl><dt>Ряд</dt><dd>${escape(g.row || "Не вказано")}</dd><dt>Номер боксу</dt><dd>${escape(g.number || "Не вказано")}</dd><dt>Тип</dt><dd>${g.type === "technical" ? "Технічний бокс" : "Гараж"}</dd><dt>ID запису</dt><dd>${escape(g.id)}</dd></dl></section><section class="panel detail-section"><h2>Власник</h2>${owner ? `<p>${escape(owner.name)}</p><a class="button" href="${escape(detailUrl("owner", owner.id))}">Відкрити картку власника</a>` : "<p>Власника не вказано. Це не означає, що гараж вільний — дані потрібно уточнити.</p>"}</section>${issues.length ? `<section class="notice"><h2>Потрібно перевірити</h2><ul>${issues.map((i) => `<li>${escape(issueLabels[i.kind])}</li>`).join("")}</ul></section>` : ""}<p class="muted">Редагування, документи й платежі додамо в наступних версіях.</p></div>`;
 }

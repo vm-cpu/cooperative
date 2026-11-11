@@ -8,6 +8,9 @@ test("map and list retain query, uniquely matched garage opens and returns to ma
   await page.getByRole("link", { name: "Карта", exact: true }).click();
   await expect(page.locator(".map-viewport")).toBeVisible();
   await expect(page.locator("#search")).toHaveValue("1-01");
+  const world = page.locator(".map-viewport svg > g");
+  await page.getByRole("button", { name: "Збільшити", exact: true }).click();
+  const cameraBefore = await world.getAttribute("transform");
   const cell = page.getByRole("button", { name: "Гараж 1-1", exact: true });
   await cell.click();
   await page
@@ -15,7 +18,8 @@ test("map and list retain query, uniquely matched garage opens and returns to ma
     .getByRole("link", { name: "Відкрити картку гаража" })
     .click();
   await expect(page.locator("h1")).toHaveText("Гараж 1-01");
-  await page.getByRole("link", { name: "Повернутися до списку" }).click();
+  await page.getByRole("link", { name: "Повернутися до карти" }).click();
+  await expect(world).toHaveAttribute("transform", cameraBefore);
   await expect(page.locator(".map-viewport")).toBeVisible();
   await page.getByRole("link", { name: "Список", exact: true }).click();
   await expect(page.locator("#search")).toHaveValue("1-01");
