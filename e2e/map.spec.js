@@ -80,6 +80,11 @@ for (const width of [320, 375, 768, 1280])
           .map((el) => el.parentElement.dataset.cell || el.textContent);
       });
       expect(issues).toEqual([]);
+      await viewport.scrollIntoViewIfNeeded();
+      // Let SVG repaint after the screenshot helper scrolls the page to the map.
+      await page.evaluate(
+        () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+      );
       await viewport.screenshot({ path: `test-results/plan-${width}-${rotation}.png` });
       expect(await viewport.evaluate((el) => [el.scrollLeft, el.scrollTop])).toEqual([0, 0]);
       const clipped = await viewport.evaluate((host) => {
