@@ -81,6 +81,20 @@ for (const width of [320, 375, 768, 1280])
       });
       expect(issues).toEqual([]);
       await viewport.screenshot({ path: `test-results/plan-${width}-${rotation}.png` });
+      expect(await viewport.evaluate((el) => [el.scrollLeft, el.scrollTop])).toEqual([0, 0]);
+      const clipped = await viewport.evaluate((host) => {
+        const bounds = host.getBoundingClientRect();
+        return [...host.querySelectorAll("polygon, .map-landmark rect")].some((el) => {
+          const r = el.getBoundingClientRect();
+          return (
+            r.top < bounds.top ||
+            r.bottom > bounds.bottom ||
+            r.left < bounds.left ||
+            r.right > bounds.right
+          );
+        });
+      });
+      expect(clipped).toBe(false);
       await page.getByRole("button", { name: "Праворуч ↷", exact: true }).click();
     }
     await page.locator(".map-controls").scrollIntoViewIfNeeded();

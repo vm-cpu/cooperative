@@ -663,7 +663,7 @@ label {
   min-height: 280px;
   border: 2px solid var(--line);
   border-radius: 0.6rem;
-  overflow: hidden;
+  overflow: clip;
   background: #edf2eb;
   touch-action: none;
 }
