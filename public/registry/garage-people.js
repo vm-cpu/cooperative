@@ -156,7 +156,9 @@ export function renderGaragePeople(host, data, garage, ownerHref, escape, onChan
       });
       for (const input of content.querySelectorAll("input")) {
         input.addEventListener("keydown", (event) => {
-          if (event.key === "Enter" && !event.isComposing) saveSelection();
+          if (event.key !== "Enter" || event.isComposing) return;
+          event.preventDefault();
+          saveSelection();
         });
       }
       content.querySelector("[data-save]").addEventListener("click", saveSelection);
