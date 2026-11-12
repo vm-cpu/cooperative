@@ -9,12 +9,20 @@ test.beforeAll(async () => {
   html = await buildDemo();
 });
 
-async function saveSingleReading(screen) {
+async function saveSingleReading(screen, checkInvalid = false) {
   await screen.getByText("Ряд 1", { exact: true }).click();
   await screen.getByRole("button", { name: "Внести показники" }).click();
   await screen.getByLabel("Дата зняття показників").pressSequentially("12.11.2026");
-  await screen.getByLabel("Новий показник гаража 1-01", { exact: true }).pressSequentially("1272");
-  await screen.getByRole("button", { name: "Зберегти показники" }).click();
+  const reading = screen.getByLabel("Новий показник гаража 1-01", { exact: true });
+  const save = screen.getByRole("button", { name: "Зберегти показники" });
+  if (checkInvalid) {
+    await reading.pressSequentially("1272.5");
+    await save.click();
+    await expect(screen.getByRole("alert")).toContainText("введіть ціле число");
+    await reading.fill("");
+  }
+  await reading.pressSequentially("1272");
+  await save.click();
   await expect(
     screen.getByRole("status").filter({ hasText: "Збережено показників: 1" }),
   ).toBeVisible();
@@ -52,5 +60,5 @@ test("the same HTML saves when the preview blocks native form submission", async
     route.fulfill({ contentType: "text/html", body: html }),
   );
   await page.goto("/demo-preview");
-  await saveSingleReading(page.frameLocator("iframe"));
+  await saveSingleReading(page.frameLocator("iframe"), true);
 });

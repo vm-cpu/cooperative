@@ -93,7 +93,7 @@ export function renderElectricity(host, data, openRow, garageHref, setOpenRow, e
         const latest = meterHistory(g.id, saved)[0];
         return `<tr><th scope="row">${escape(garageLabel(g))}</th>
           <td>${latest ? escape(formatReading.format(latest.value)) : "—"}</td>
-          <td><input type="number" min="0" step="1" max="999999999" inputmode="numeric"
+          <td><input type="text" inputmode="numeric" autocomplete="off"
             name="${escape(g.id)}" aria-label="Новий показник гаража ${escape(garageLabel(g))}"></td></tr>`;
       });
       body.innerHTML = `
@@ -105,7 +105,7 @@ export function renderElectricity(host, data, openRow, garageHref, setOpenRow, e
           <table class="garage-table meter-table"><caption>Показники, кВт·год</caption>
           <thead><tr><th scope="col">Гараж</th><th scope="col">Було</th><th scope="col">Новий</th></tr></thead>
           <tbody>${fields.join("")}</tbody></table>
-          <div class="garage-form-actions"><button type="submit">Зберегти показники</button><button type="button" data-cancel-readings>Скасувати</button></div>
+          <div class="garage-form-actions"><button type="button" data-save-readings>Зберегти показники</button><button type="button" data-cancel-readings>Скасувати</button></div>
           <p data-reading-error role="alert"></p>
         </form>`;
       const form = body.querySelector("form");
@@ -120,8 +120,7 @@ export function renderElectricity(host, data, openRow, garageHref, setOpenRow, e
         showReadings();
         body.querySelector("[data-edit-readings]")?.focus();
       });
-      form.addEventListener("submit", (event) => {
-        event.preventDefault();
+      function saveReadings() {
         const values = new FormData(form);
         const dateText = dateInput.value.trim();
         const date = parseReadingDate(dateText);
@@ -134,11 +133,11 @@ export function renderElectricity(host, data, openRow, garageHref, setOpenRow, e
           return;
         }
 
+        const batch = [];
         try {
           const current = readSavedReadings();
-          const batch = [];
           for (const g of garages) {
-            const raw = values.get(g.id);
+            const raw = values.get(g.id).trim();
             if (raw === "") continue;
             const value = Number(raw);
             const latest = meterHistory(g.id, current)[0];
@@ -151,7 +150,7 @@ export function renderElectricity(host, data, openRow, garageHref, setOpenRow, e
               problem = `новий показник менший за попередній (${formatReading.format(latest.value)}). Перевірте число.`;
             if (problem) {
               error.textContent = `Гараж ${garageLabel(g)} — ${problem}`;
-              form.elements.namedItem(g.id).focus();
+              form.elements.namedItem(g.id).focus({ preventScroll: true });
               return;
             }
             batch.push({ garageId: g.id, date, value });
@@ -161,9 +160,23 @@ export function renderElectricity(host, data, openRow, garageHref, setOpenRow, e
             return;
           }
           writeReadingBatch(current, batch);
-          showReadings(`Збережено показників: ${batch.length}.`);
         } catch {
           error.textContent = "Не вдалося зберегти показники. Перевірте налаштування браузера.";
+          return;
+        }
+        showReadings(`Збережено показників: ${batch.length}.`);
+      }
+
+      // A preview can allow local scripts while blocking native form submission.
+      form.querySelector("[data-save-readings]").addEventListener("click", saveReadings);
+      form.addEventListener("keydown", (event) => {
+        if (
+          event.key === "Enter" &&
+          event.target instanceof HTMLInputElement &&
+          !event.isComposing
+        ) {
+          event.preventDefault();
+          saveReadings();
         }
       });
     }
