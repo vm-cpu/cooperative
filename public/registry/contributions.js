@@ -74,7 +74,7 @@ export function renderPaymentEditor(host, { id, garages, example }, escape, onSa
     return;
   }
   const garageField = garages
-    ? `<label>Гараж<select name="garage" aria-required="true">
+    ? `<label>Гараж<select name="garage" aria-label="Гараж" aria-required="true">
         <option value="">Виберіть гараж</option>
         ${garages.map((garage) => `<option value="${escape(garage.id)}">${escape(garageLabel(garage))}</option>`).join("")}
       </select></label>`
