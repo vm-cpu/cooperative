@@ -29,9 +29,17 @@ test("garage people controls keep each garage and role independent in the embedd
   await expect(owner.getByRole("button")).toHaveText(["Замінити", "Прибрати"]);
   await owner.getByRole("button", { name: "Замінити" }).click();
   await owner.getByLabel("Людина").selectOption("owner-02");
+  const ownerSince = owner.getByLabel("Власник з", { exact: true });
+  await ownerSince.fill("31.11.2026");
+  await save(owner);
+  await expect(owner.getByRole("status")).toContainText("Введіть дійсну дату");
+  await expect(ownerSince).toBeFocused();
+  await ownerSince.fill("01.11.2026");
   await save(owner);
   await expect(owner).toContainText("Прикладенко Микола Тестович");
+  await expect(owner.locator("time")).toHaveText("01.11.2026");
   await expect(tenant).toContainText("Зразковий Андрій Ігорович");
+  await expect(tenant.locator("time")).toHaveText("01.09.2026");
 
   await demo.getByRole("link", { name: "Власники", exact: true }).click();
   await demo.getByRole("link", { name: "Тестова Олена Андріївна", exact: true }).click();
@@ -45,8 +53,10 @@ test("garage people controls keep each garage and role independent in the embedd
   await demo.getByRole("searchbox").fill("1-01");
   await demo.getByRole("link", { name: "Гараж 1-01", exact: true }).click();
   await category.click();
+  await expect(owner.locator("time")).toHaveText("01.11.2026");
   await remove(owner);
   await expect(owner.getByRole("button")).toHaveText(["Додати"]);
+  await expect(owner.locator("time")).toHaveCount(0);
   await expect(tenant).toContainText("Зразковий Андрій Ігорович");
   await expect(demo.getByText("Квитанції", { exact: true })).toBeVisible();
 
@@ -54,9 +64,11 @@ test("garage people controls keep each garage and role independent in the embedd
   await owner.getByLabel("Людина").selectOption("new");
   await owner.getByLabel("ПІБ").fill("Тестова Наталія Іванівна");
   await owner.getByLabel("Телефон (необов’язково)").fill("+380 00 000 00 00");
+  await ownerSince.fill("03.11.2026");
   await save(owner);
   await expect(owner.getByRole("status")).toHaveText("Людину додано до гаража.");
   await expect(owner).toContainText("Тестова Наталія Іванівна");
+  await expect(owner.locator("time")).toHaveText("03.11.2026");
 
   await demo.getByRole("link", { name: "Гаражі", exact: true }).click();
   await demo.getByRole("searchbox").fill("1-11");
@@ -65,12 +77,18 @@ test("garage people controls keep each garage and role independent in the embedd
   await expect(tenant.getByRole("button")).toHaveText(["Додати"]);
   await tenant.getByRole("button", { name: "Додати" }).click();
   await tenant.getByLabel("Людина").selectOption({ label: "Тестова Наталія Іванівна" });
-  await save(tenant);
+  const tenantSince = tenant.getByLabel("Орендар з", { exact: true });
+  await tenantSince.fill("04.11.2026");
+  await tenantSince.press("Enter");
   await expect(tenant).toContainText("Тестова Наталія Іванівна");
+  await expect(tenant.locator("time")).toHaveText("04.11.2026");
   await tenant.getByRole("button", { name: "Замінити" }).click();
   await tenant.getByLabel("Людина").selectOption({ label: "Зразковий Андрій Ігорович" });
+  await expect(tenantSince).toHaveValue("");
+  await tenantSince.fill("05.11.2026");
   await save(tenant);
   await expect(tenant).toContainText("Зразковий Андрій Ігорович");
+  await expect(tenant.locator("time")).toHaveText("05.11.2026");
   await remove(tenant);
   await expect(tenant.getByRole("button")).toHaveText(["Додати"]);
 
@@ -80,5 +98,7 @@ test("garage people controls keep each garage and role independent in the embedd
   await demo.getByRole("link", { name: "Гараж 1-01", exact: true }).click();
   await category.click();
   await expect(owner).toContainText("Тестова Наталія Іванівна");
+  await expect(owner.locator("time")).toHaveText("03.11.2026");
   await expect(tenant).toContainText("Зразковий Андрій Ігорович");
+  await expect(tenant.locator("time")).toHaveText("01.09.2026");
 });

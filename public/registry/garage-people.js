@@ -1,3 +1,4 @@
+import { formatCalendarDate, parseCalendarDate } from "./dates.js";
 import { garageExamples } from "./garage-examples.js";
 import { garageLabel } from "./model.js";
 
@@ -20,7 +21,7 @@ export function prepareGaragePeople(data) {
   }
 }
 
-function updateGaragePerson(data, garage, role, person) {
+function updateGaragePerson(data, garage, role, person, since) {
   // People stay in the directory. Only this garage's selected role changes.
   if (role === "owner") {
     if (person && !data.ownerById.has(person.id)) {
@@ -28,14 +29,15 @@ function updateGaragePerson(data, garage, role, person) {
       data.ownerById.set(person.id, person);
     }
     garage.ownerId = person?.id ?? null;
+    garage.ownerSince = since;
   } else {
-    garage.tenant = person ? { person } : null;
+    garage.tenant = person ? { person, since } : null;
   }
 }
 
 const roles = {
-  owner: { title: "Власник", empty: "Без власника", object: "власника" },
-  tenant: { title: "Орендар", empty: "Без орендаря", object: "орендаря" },
+  owner: { title: "Власник", empty: "Без власника", object: "власника", since: "Власник з" },
+  tenant: { title: "Орендар", empty: "Без орендаря", object: "орендаря", since: "Орендар з" },
 };
 
 export function renderGaragePeople(host, data, garage, ownerHref, escape, onChange) {
@@ -52,12 +54,12 @@ export function renderGaragePeople(host, data, garage, ownerHref, escape, onChan
 
     function showPerson(message = "", focus = false) {
       const person = current();
-      const since = role === "tenant" && garage.tenant?.since;
+      const since = role === "owner" ? garage.ownerSince : garage.tenant?.since;
       content.innerHTML = person
         ? `<dl><dt>ПІБ</dt><dd>${escape(person.name)}</dd>
           ${person.phone ? `<dt>Телефон</dt><dd>${escape(person.phone)}</dd>` : ""}
           ${person.address ? `<dt>Адреса</dt><dd>${escape(person.address)}</dd>` : ""}
-          ${since ? `<dt>Орендує з</dt><dd>${escape(since.split("-").reverse().join("."))}</dd>` : ""}
+          ${since ? `<dt>${words.since}</dt><dd><time datetime="${escape(since)}">${escape(formatCalendarDate(since))}</time></dd>` : ""}
           </dl>
           ${role === "owner" ? `<a class="button quiet" href="${escape(ownerHref(person.id))}">Відкрити картку власника</a>` : ""}
           <div class="garage-form-actions"><button type="button" data-edit-person>Замінити</button><button type="button" data-remove-person>Прибрати</button></div>`
@@ -69,8 +71,8 @@ export function renderGaragePeople(host, data, garage, ownerHref, escape, onChan
       if (focus) edit.focus();
     }
 
-    function save(person, message) {
-      updateGaragePerson(data, garage, role, person);
+    function save(person, since, message) {
+      updateGaragePerson(data, garage, role, person, since);
       showPerson(message, true);
       onChange();
     }
@@ -83,7 +85,7 @@ export function renderGaragePeople(host, data, garage, ownerHref, escape, onChan
       cancel.addEventListener("click", () => showPerson("", true));
       content
         .querySelector("[data-confirm]")
-        .addEventListener("click", () => save(null, "Зв’язок із гаражем прибрано."));
+        .addEventListener("click", () => save(null, null, "Зв’язок із гаражем прибрано."));
       cancel.focus();
     }
 
@@ -103,11 +105,22 @@ export function renderGaragePeople(host, data, garage, ownerHref, escape, onChan
           <label>ПІБ<input name="name" maxlength="120" required /></label>
           <label>Телефон (необов’язково)<input name="phone" type="tel" maxlength="40" /></label>
         </div>
+        <div class="garage-form-fields"><label>${words.since}<input name="since" type="text" placeholder="01.11.2026" autocomplete="off" aria-describedby="${role}-since-hint" /></label></div>
+        <p id="${role}-since-hint" class="muted">Дата у форматі ДД.ММ.РРРР. Якщо вона невідома, залиште поле порожнім.</p>
         <div class="garage-form-actions"><button type="button" data-save>Зберегти</button><button type="button" data-cancel>Скасувати</button></div>`;
       const select = content.querySelector("select");
       const newFields = content.querySelector("[data-new-person]");
       const name = content.querySelector("[name=name]");
+      const date = content.querySelector("[name=since]");
       function saveSelection() {
+        const dateText = date.value.trim();
+        const since = parseCalendarDate(dateText);
+        if (dateText && !since) {
+          status.textContent = "Введіть дійсну дату у форматі ДД.ММ.РРРР, наприклад 01.11.2026.";
+          date.setAttribute("aria-invalid", "true");
+          date.focus();
+          return;
+        }
         let person = data.people.get(select.value);
         if (select.value === "new") {
           if (!name.value.trim()) {
@@ -128,16 +141,24 @@ export function renderGaragePeople(host, data, garage, ownerHref, escape, onChan
           select.focus();
           return;
         }
-        save(person, previous ? "Заміну збережено." : "Людину додано до гаража.");
+        save(person, since, previous ? "Заміну збережено." : "Людину додано до гаража.");
       }
       select.addEventListener("change", () => {
         newFields.hidden = select.value !== "new";
-        status.textContent = "";
+        if (!date.hasAttribute("aria-invalid")) status.textContent = "";
         if (!newFields.hidden) name.focus();
       });
-      newFields.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" && !event.isComposing) saveSelection();
+      date.addEventListener("input", () => {
+        if (date.hasAttribute("aria-invalid")) {
+          date.removeAttribute("aria-invalid");
+          status.textContent = "";
+        }
       });
+      for (const input of content.querySelectorAll("input")) {
+        input.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" && !event.isComposing) saveSelection();
+        });
+      }
       content.querySelector("[data-save]").addEventListener("click", saveSelection);
       content.querySelector("[data-cancel]").addEventListener("click", () => showPerson("", true));
       select.focus();
