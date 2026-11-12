@@ -33,15 +33,19 @@ test("the standalone preview saves a contribution and lists it with the other pa
     .click();
   await screen.getByText("Додати тестову оплату", { exact: true }).click();
 
-  const date = screen.getByLabel("Дата оплати", { exact: true });
-  const period = screen.getByLabel("За місяць", { exact: true });
-  const save = screen.getByRole("button", { name: "Зберегти оплату", exact: true });
+  const form = screen.getByRole("form", { name: "Тестова оплата членського внеску" });
+  const date = form.getByLabel("Дата оплати", { exact: true });
+  const period = form.getByLabel("За період", { exact: true });
+  const save = form.getByRole("button", { name: "Зберегти оплату", exact: true });
   await date.pressSequentially("12.11.2026");
-  await screen.getByLabel("Сума, грн", { exact: true }).pressSequentially("1500,25");
+  await form.getByLabel("Сума, грн", { exact: true }).pressSequentially("1500,25");
   await period.pressSequentially("13.2026");
   await save.click();
-  await expect(screen.getByRole("alert")).toContainText("Введіть місяць і рік");
-  await period.fill("11.2026");
+  await expect(form.getByRole("alert")).toContainText("Введіть місяць і рік");
+  await period.fill("11.2026 - 11.2025");
+  await save.click();
+  await expect(form.getByRole("alert")).toContainText("від раннього до пізнього місяця");
+  await period.fill("11.2025 - 11.2026");
   await save.click();
   await expect(screen.getByRole("status").filter({ hasText: "збережено в історії" })).toBeVisible();
   const history = screen.getByRole("table", { name: "Історія членських внесків" });
@@ -51,6 +55,7 @@ test("the standalone preview saves a contribution and lists it with the other pa
   await expect(search).toHaveValue("1-01");
   const newPayment = overview.getByRole("row", { name: /12.11.2026/ });
   await expect(newPayment).toContainText(/1\s500,25/);
+  await expect(newPayment).toContainText("листопад 2025");
   await expect(newPayment).toContainText("листопад 2026");
   await expect(screen.getByRole("status").filter({ hasText: "Разом:" })).toContainText(/3\s900,25/);
   await expect
@@ -63,13 +68,13 @@ test("the standalone preview saves a contribution and lists it with the other pa
   await expect(newPayment).toContainText(/1\s500,25/);
   await search.fill("1-01");
   await screen.getByText("Додати оплату", { exact: true }).click();
-  const garage = screen.getByLabel("Гараж", { exact: true });
-  await screen.getByLabel("Дата оплати", { exact: true }).fill("13.11.2026");
-  await screen.getByLabel("Сума, грн", { exact: true }).fill("200,50");
-  const paidMonth = screen.getByLabel("За місяць", { exact: true });
-  await paidMonth.fill("12.2026");
-  await screen.getByRole("button", { name: "Зберегти оплату" }).click();
-  await expect(screen.getByRole("alert")).toContainText("Виберіть гараж");
+  const garage = form.getByLabel("Гараж", { exact: true });
+  await form.getByLabel("Дата оплати", { exact: true }).fill("13.11.2026");
+  await form.getByLabel("Сума, грн", { exact: true }).fill("200,50");
+  const paidMonth = form.getByLabel("За період", { exact: true });
+  await paidMonth.fill("12.2026 - 02.2027");
+  await form.getByRole("button", { name: "Зберегти оплату" }).click();
+  await expect(form.getByRole("alert")).toContainText("Виберіть гараж");
   await garage.selectOption("garage-02");
   await paidMonth.press("Enter");
 
@@ -78,6 +83,7 @@ test("the standalone preview saves a contribution and lists it with the other pa
   const overviewPayment = overview.getByRole("row", { name: /13.11.2026/ });
   await expect(overviewPayment).toContainText("200,50");
   await expect(overviewPayment).toContainText("грудень 2026");
+  await expect(overviewPayment).toContainText("лютий 2027");
   await page.reload();
   await navigation.getByRole("link", { name: "Внески", exact: true }).click();
   await overviewPayment.getByRole("link", { name: "1-2", exact: true }).click();

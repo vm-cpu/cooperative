@@ -1,13 +1,17 @@
 import { formatCalendarDate } from "./dates.js";
-import {
-  renderContributionResults,
-  renderGarageContributions,
-  renderPaymentEditor,
-} from "./contributions.js";
+import { renderContributionResults, renderGarageContributions } from "./contributions.js";
 import { renderElectricity, renderGarageMeterReadings } from "./electricity.js";
+import { renderTariffEditor } from "./electricity-tariffs.js";
 import { garageMeterHistory } from "./meter-readings.js";
 import { garageExamples } from "./garage-examples.js";
-import { renderGarageExample } from "./garage-card.js";
+import {
+  garageCategory,
+  garageElectricitySection,
+  garageReceiptsSection,
+  renderGarageExample,
+} from "./garage-card.js";
+import { renderGarageElectricityPayments, renderGarageReceipts } from "./garage-billing.js";
+import { renderPaymentEditor } from "./payment-editor.js";
 import { prepareGaragePeople, renderGaragePeople } from "./garage-people.js";
 import { renderMap } from "./map.js";
 import { renderOwnerEditor } from "./owner-editor.js";
@@ -245,7 +249,8 @@ function backLink(params) {
 function electricityPage(params) {
   screen.innerHTML =
     title("Електрика", "Відкрийте ряд, щоб переглянути або внести показники.") +
-    '<p class="muted">Тестові показники зберігаються в цьому браузері.</p><div class="garage-categories" id="electricity-rows"></div>';
+    '<p class="muted">Тестові показники зберігаються в цьому браузері.</p><div id="electricity-tariffs"></div><div class="garage-categories" id="electricity-rows"></div>';
+  renderTariffEditor(screen.querySelector("#electricity-tariffs"), escape);
   renderElectricity(
     screen.querySelector("#electricity-rows"),
     data,
@@ -310,24 +315,32 @@ function garagePage(id, params) {
     );
     const meter = screen.querySelector("[data-garage-meter]");
     const contributions = screen.querySelector("[data-garage-contributions]");
+    const electricityPayments = screen.querySelector("[data-garage-electricity-payments]");
+    const receipts = screen.querySelector("[data-garage-receipts]");
     if (meter) renderGarageMeterReadings(meter, g, escape, canEditReadings);
     if (contributions) renderGarageContributions(contributions, id, escape, canEditReadings);
+    if (electricityPayments)
+      renderGarageElectricityPayments(electricityPayments, g, escape, canEditReadings);
+    if (receipts) renderGarageReceipts(receipts, g, escape, canEditReadings);
   }
   if (garageExamples.has(id)) {
     screen.innerHTML = `<div class="details">${backLink(params)}${title(`Гараж ${label(g)}`, "Картка гаража · Вигадані дані")}<div id="garage-example"></div></div>`;
-    renderGarageExample(screen.querySelector("#garage-example"), g, owner, garageLabel(g), escape);
+    renderGarageExample(screen.querySelector("#garage-example"), g, owner, escape);
     mountGarageSections();
     return;
   }
   const issues = allIssues.filter((i) => i.kind !== "owner" && i.garageIds.includes(id));
   const contributions = canEditReadings
-    ? '<details class="garage-category detail-section"><summary>Внески</summary><div class="garage-category-body"><div data-garage-contributions></div></div></details>'
+    ? garageCategory("Внески", "<div data-garage-contributions></div>")
     : "";
   const electricity =
-    canEditReadings || garageMeterHistory(id).entries.length
-      ? `<details class="garage-category detail-section"><summary>Електрика</summary><div class="garage-category-body"><div data-garage-meter></div></div></details>`
-      : "";
-  screen.innerHTML = `<div class="details">${backLink(params)}${title(`Гараж ${label(g)}`, "Картка гаража · Вигадані дані")}<section class="panel"><h2>Про гараж</h2><dl><dt>Ряд</dt><dd>${escape(g.row || "Не вказано")}</dd><dt>Номер боксу</dt><dd>${escape(g.number || "Не вказано")}</dd><dt>Тип</dt><dd>${g.type === "technical" ? "Технічний бокс" : "Гараж"}</dd><dt>ID запису</dt><dd>${escape(g.id)}</dd></dl></section><details class="garage-category detail-section"><summary>Власник і орендар</summary><div class="garage-category-body"><div data-garage-people></div></div></details>${issues.length ? `<section class="notice"><h2>Потрібно перевірити</h2><ul>${issues.map((i) => `<li>${escape(issueLabels[i.kind])}</li>`).join("")}</ul></section>` : ""}${contributions}${electricity}</div>`;
+    canEditReadings || garageMeterHistory(id).entries.length ? garageElectricitySection() : "";
+  screen.innerHTML = `<div class="details">${backLink(params)}${title(`Гараж ${label(g)}`, "Картка гаража · Вигадані дані")}<section class="panel"><h2>Про гараж</h2><dl><dt>Ряд</dt><dd>${escape(g.row || "Не вказано")}</dd><dt>Номер боксу</dt><dd>${escape(g.number || "Не вказано")}</dd><dt>Тип</dt><dd>${g.type === "technical" ? "Технічний бокс" : "Гараж"}</dd><dt>ID запису</dt><dd>${escape(g.id)}</dd></dl></section>
+    <div class="garage-categories">
+      ${garageCategory("Власник і орендар", "<div data-garage-people></div>")}
+      ${issues.length ? `<section class="notice"><h2>Потрібно перевірити</h2><ul>${issues.map((i) => `<li>${escape(issueLabels[i.kind])}</li>`).join("")}</ul></section>` : ""}
+      ${contributions}${electricity}${canEditReadings ? garageReceiptsSection() : ""}
+    </div></div>`;
   mountGarageSections();
 }
 function ownerPage(id, params) {
