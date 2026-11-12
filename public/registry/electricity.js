@@ -1,4 +1,6 @@
 import { formatCalendarDate, parseCalendarDate } from "./dates.js";
+import { electricityCharge, tariffHistory } from "./electricity-tariffs.js";
+import { periodLabel, tableAmount } from "./payment-data.js";
 import { filterGarages, garageLabel, isConfirmedGarage, qualityIssues } from "./model.js";
 import {
   garageMeterHistory,
@@ -8,17 +10,35 @@ import {
 } from "./meter-readings.js";
 
 const formatReading = new Intl.NumberFormat("uk-UA");
+const chargeMessages = {
+  mixed: "Потрібен показник між тарифами",
+  missing: "Потрібен тариф",
+  overflow: "Сума завелика",
+};
 
 function meterHistoryTable({ entries, available }, escape) {
   const warning = available
     ? ""
     : '<p class="muted">Збережені в браузері показники недоступні.</p>';
   if (!entries.length) return warning + "<p>Показників лічильника ще немає.</p>";
+  const tariffs = tariffHistory();
+  const rows = entries.map((item, index) => {
+    const previous = entries[index + 1];
+    const charge = previous ? electricityCharge(previous, item, tariffs.entries) : null;
+    const amount =
+      charge?.amount === undefined
+        ? (chargeMessages[charge?.reason] ?? "—")
+        : tableAmount(charge.amount);
+    return `<tr><td class="garage-table-value">${escape(formatCalendarDate(item.date))}</td>
+      <td>${escape(formatReading.format(item.value))}</td>
+      <td>${charge ? escape(periodLabel(charge.period)) : "—"}</td>
+      <td>${escape(amount)}</td></tr>`;
+  });
   return (
     warning +
     `<table class="garage-table"><caption>Показники лічильника</caption>
-    <thead><tr><th scope="col">Дата</th><th scope="col">Показник, кВт·год</th></tr></thead>
-    <tbody>${entries.map((item) => `<tr><td class="garage-table-value">${escape(formatCalendarDate(item.date))}</td><td>${escape(formatReading.format(item.value))}</td></tr>`).join("")}</tbody></table>`
+    <thead><tr><th scope="col">Дата</th><th scope="col">Показник, кВт·год</th><th scope="col">Період</th><th scope="col">Нараховано, грн</th></tr></thead>
+    <tbody>${rows.join("")}</tbody></table>`
   );
 }
 
