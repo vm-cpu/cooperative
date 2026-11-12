@@ -43,15 +43,16 @@ test("mobile card tables, receipt and local contribution payment", async ({ page
     "Демонстраційна квитанція",
   );
   await card.getByText("Додати тестову оплату", { exact: true }).click();
-  await page.getByLabel("Дата оплати").fill("10.11.2026");
-  await page.getByLabel("Сума, грн").fill("123.45");
-  await page.getByLabel("За період").fill("04.2027");
+  const form = card.getByRole("form", { name: "Тестова оплата членського внеску" });
+  await form.getByLabel("Дата оплати").fill("10.11.2026");
+  await form.getByLabel("Сума, грн").fill("123.45");
+  await form.getByLabel("За період").fill("04.2027");
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
     .toBeLessThanOrEqual(375);
   const accessibility = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
   expect(accessibility.violations).toEqual([]);
-  await page.getByRole("button", { name: "Зберегти оплату" }).click();
+  await form.getByRole("button", { name: "Зберегти оплату" }).click();
   await expect(card.getByRole("status").filter({ hasText: "збережено в історії" })).toBeVisible();
   await expect(card.getByRole("table", { name: "Історія членських внесків" })).toContainText(
     "123,45",
