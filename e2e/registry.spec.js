@@ -131,3 +131,43 @@ for (const width of [320, 375, 768]) {
     });
   }
 }
+
+for (const width of [375, 1280]) {
+  test(`directory and section search stay available while scrolling at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 780 });
+    await page.goto("/#garages");
+    const directory = page.locator(".directory-panel");
+    const nav = directory.getByRole("navigation");
+    const search = directory.getByRole("searchbox");
+    await expect(page.locator("main").getByRole("searchbox")).toHaveCount(0);
+    await expect(search).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, 900));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(500);
+    await expect(search).toBeInViewport({ ratio: 1 });
+    await expect(nav.getByRole("link", { name: "Квитанції" })).toBeInViewport({ ratio: 1 });
+    await search.fill("1-01");
+    const result = page.getByRole("link", { name: "Гараж 1-01", exact: true });
+    await expect(result).toBeInViewport({ ratio: 1 });
+    await expect(search).toBeFocused();
+    if (width === 375) {
+      const panel = await directory.boundingBox();
+      const record = await result.boundingBox();
+      expect(record.y).toBeGreaterThanOrEqual(panel.y + panel.height - 1);
+    }
+
+    await nav.getByRole("link", { name: "Квитанції" }).click();
+    await expect(search).toHaveAccessibleName("Гараж або власник");
+    await search.fill("1-01");
+    await expect(page.getByRole("table", { name: "Загальна таблиця квитанцій" })).toContainText(
+      "1-01",
+    );
+    await nav.getByRole("link", { name: "Власники" }).click();
+    await expect(search).toHaveAccessibleName("Ім’я власника");
+    await nav.getByRole("link", { name: "Внески" }).click();
+    await expect(search).toHaveAccessibleName("Гараж або власник");
+    await nav.getByRole("link", { name: "Електрика" }).click();
+    await expect(search).toHaveCount(0);
+  });
+}

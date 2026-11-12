@@ -172,14 +172,37 @@ strong {
 }
 .layout {
   display: grid;
-  grid-template-columns: 230px minmax(0, 1fr);
+  grid-template-columns: 250px minmax(0, 1fr);
   max-width: 1440px;
   margin: auto;
   min-height: 75vh;
 }
-.navigation {
-  padding: 1.6rem 1rem;
+.directory-panel {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  max-height: 100dvh;
+  min-width: 0;
   border-right: 1px solid var(--line);
+  background: #f5f7f4;
+}
+.navigation {
+  padding: 1.2rem 1rem 0.55rem;
+  min-height: 0;
+  overflow: auto;
+}
+#directory-search {
+  flex: none;
+  padding: 0.6rem 1rem 1rem;
+  border-top: 1px solid var(--line);
+}
+#directory-search label {
+  font-size: 0.9rem;
+  line-height: 1.25;
+  margin-bottom: 0.35rem;
 }
 .nav-caption {
   font-size: 0.85rem;
@@ -208,7 +231,7 @@ strong {
 .nav-note {
   font-size: 0.9rem;
   color: var(--muted);
-  margin: 2rem 0.7rem;
+  margin: 0.8rem 0.7rem 0.25rem;
 }
 main {
   padding: 1.8rem 2rem;
@@ -249,10 +272,8 @@ main:focus {
   padding: 1.1rem;
   margin: 1rem 0;
 }
-.fields {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  gap: 1rem;
+.row-filter {
+  max-width: 18rem;
 }
 .hint {
   display: block;
@@ -473,13 +494,10 @@ label {
   main {
     padding: 2rem 2.5rem;
   }
-  .navigation {
-    padding-top: 2rem;
-  }
 }
 @media (max-width: 1000px) {
   .layout {
-    grid-template-columns: 190px minmax(0, 1fr);
+    grid-template-columns: 220px minmax(0, 1fr);
   }
   main {
     padding: 1.2rem;
@@ -502,6 +520,22 @@ label {
   }
 }
 @media (max-width: 760px) {
+  :root {
+    scroll-padding-top: var(--directory-height, 0px);
+  }
+  .directory-panel {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    max-height: 60dvh;
+    background: white;
+  }
+  #directory-search {
+    padding: 0.3rem 0.8rem 0.55rem;
+  }
+  #directory-search input {
+    min-height: 44px;
+    padding-block: 0.25rem;
+  }
   .site-header {
     flex-direction: column;
     align-items: stretch;
@@ -538,9 +572,6 @@ label {
     grid-template-columns: 1fr 1fr;
     gap: 0.4rem;
     padding: 0.35rem 0.8rem;
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-    background: white;
   }
   .navigation a {
     margin: 0;
@@ -564,10 +595,6 @@ label {
   .heading .total {
     display: inline-block;
     margin-top: 0.3rem;
-  }
-  .fields {
-    grid-template-columns: 1fr;
-    gap: 0.7rem;
   }
   .filters {
     padding: 0.85rem;
@@ -990,4 +1017,15 @@ label {
 [data-meter-details] [role="alert"]:not(:empty) {
   color: #8a2525;
   font-weight: 700;
+}
+
+@media (max-width: 760px) and (max-height: 460px) {
+  .navigation {
+    display: flex;
+  }
+
+  .navigation a {
+    flex: none;
+    white-space: nowrap;
+  }
 }
