@@ -11,6 +11,7 @@ import {
 import { garageMeterHistory } from "./meter-readings.js";
 import { garageExamples } from "./garage-examples.js";
 import { renderGarageExample } from "./garage-card.js";
+import { prepareGaragePeople, renderGaragePeople } from "./garage-people.js";
 import { renderMap } from "./map.js";
 import {
   prepareData,
@@ -89,7 +90,7 @@ function title(text, subtitle, extra = "") {
 }
 function garageItem(g) {
   const owner = data.ownerById.get(g.ownerId);
-  return `<li class="record"><div><a class="record-link" data-record="${escape(g.id)}" href="${escape(detailUrl("garage", g.id))}">Гараж ${label(g)}</a><span class="record-meta">Ряд ${escape(g.row || "не вказано")}</span></div><div><p>${escape(owner?.name || "Власника не вказано")}</p>${g.type === "technical" ? '<span class="status neutral">Технічний бокс</span>' : ""}${!g.ownerId ? '<span class="status">Без власника</span>' : ""}${g.needsNumberReview ? '<span class="status">Уточнити номер</span>' : ""}</div><a class="button quiet" href="${escape(detailUrl("garage", g.id))}" aria-label="Відкрити картку гаража ${label(g)}">Відкрити картку</a></li>`;
+  return `<li class="record"><div><a class="record-link" data-record="${escape(g.id)}" href="${escape(detailUrl("garage", g.id))}">Гараж ${label(g)}</a><span class="record-meta">Ряд ${escape(g.row || "не вказано")}</span></div><div><p>${escape(owner?.name || "Власника не вказано")}</p>${g.tenant ? `<p class="record-meta">Орендар: ${escape(g.tenant.person.name)}</p>` : ""}${g.type === "technical" ? '<span class="status neutral">Технічний бокс</span>' : ""}${!g.ownerId ? '<span class="status">Без власника</span>' : ""}${g.needsNumberReview ? '<span class="status">Уточнити номер</span>' : ""}</div><a class="button quiet" href="${escape(detailUrl("garage", g.id))}" aria-label="Відкрити картку гаража ${label(g)}">Відкрити картку</a></li>`;
 }
 function empty() {
   return '<div class="empty"><h2>Нічого не знайдено</h2><p>Спробуйте інший номер чи ім’я або скиньте фільтри.</p><button type="button" data-reset>Скинути фільтри</button></div>';
@@ -130,12 +131,12 @@ function listPage(view, params) {
     title(
       views[view],
       garages
-        ? "Знайдіть гараж за номером або ім’ям власника."
+        ? "Знайдіть гараж за номером або ім’ям власника чи орендаря."
         : "Знайдіть власника та всі його гаражі.",
       `<span class="total">${garages ? data.garages.length : data.owners.length} ${garages ? "боксів" : "власників"}</span>`,
     ) +
     modes +
-    `<form class="filters" id="filters" role="search" aria-label="Пошук ${garages ? "гаражів" : "власників"}"><div class="fields"><label for="search">${garages ? "Номер гаража або ім’я власника" : "Ім’я власника"}<input id="search" name="q" type="search" autocomplete="off" value="${escape(filters.q)}" placeholder="${garages ? "Наприклад, 1-01" : "Наприклад, Тестова"}" aria-describedby="search-hint" /><span id="search-hint" class="hint">${garages ? "Можна ввести частину номера або імені." : "Однакові імена можуть належати різним людям."}</span></label>${
+    `<form class="filters" id="filters" role="search" aria-label="Пошук ${garages ? "гаражів" : "власників"}"><div class="fields"><label for="search">${garages ? "Номер гаража або ім’я людини" : "Ім’я власника"}<input id="search" name="q" type="search" autocomplete="off" value="${escape(filters.q)}" placeholder="${garages ? "Наприклад, 1-01" : "Наприклад, Тестова"}" aria-describedby="search-hint" /><span id="search-hint" class="hint">${garages ? "Можна ввести частину номера або імені." : "Однакові імена можуть належати різним людям."}</span></label>${
       garages
         ? `<div><label for="row">Ряд</label><select id="row" name="row"><option value="">Усі ряди</option>${rowSummary(
             data,
@@ -279,25 +280,29 @@ function garagePage(id, params) {
   const allIssues = qualityIssues(data);
   const canEditReadings = canRecordMeterReadings(g, allIssues);
   function mountGarageSections() {
+    renderGaragePeople(
+      screen.querySelector("[data-garage-people]"),
+      data,
+      g,
+      (ownerId) => detailUrl("owner", ownerId),
+      escape,
+      () => {
+        const name = screen.querySelector("[data-garage-owner-name]");
+        if (name) name.textContent = data.ownerById.get(g.ownerId)?.name ?? "Без власника";
+      },
+    );
     const meter = screen.querySelector("[data-garage-meter]");
     const contributions = screen.querySelector("[data-garage-contributions]");
     if (meter) renderGarageMeterReadings(meter, g, escape, canEditReadings);
     if (contributions) renderGarageContributions(contributions, id, escape, canEditReadings);
   }
-  if (owner && garageExamples.has(id)) {
+  if (garageExamples.has(id)) {
     screen.innerHTML = `<div class="details">${backLink(params)}${title(`Гараж ${label(g)}`, "Картка гаража · Вигадані дані")}<div id="garage-example"></div></div>`;
-    renderGarageExample(
-      screen.querySelector("#garage-example"),
-      g,
-      owner,
-      detailUrl("owner", owner.id),
-      garageLabel(g),
-      escape,
-    );
+    renderGarageExample(screen.querySelector("#garage-example"), g, owner, garageLabel(g), escape);
     mountGarageSections();
     return;
   }
-  const issues = allIssues.filter((i) => i.garageIds.includes(id));
+  const issues = allIssues.filter((i) => i.kind !== "owner" && i.garageIds.includes(id));
   const contributions = canEditReadings
     ? '<details class="garage-category detail-section"><summary>Внески</summary><div class="garage-category-body"><div data-garage-contributions></div></div></details>'
     : "";
@@ -305,7 +310,7 @@ function garagePage(id, params) {
     canEditReadings || garageMeterHistory(id).entries.length
       ? `<details class="garage-category detail-section"><summary>Електрика</summary><div class="garage-category-body"><div data-garage-meter></div></div></details>`
       : "";
-  screen.innerHTML = `<div class="details">${backLink(params)}${title(`Гараж ${label(g)}`, "Картка гаража · Вигадані дані")}<section class="panel"><h2>Про гараж</h2><dl><dt>Ряд</dt><dd>${escape(g.row || "Не вказано")}</dd><dt>Номер боксу</dt><dd>${escape(g.number || "Не вказано")}</dd><dt>Тип</dt><dd>${g.type === "technical" ? "Технічний бокс" : "Гараж"}</dd><dt>ID запису</dt><dd>${escape(g.id)}</dd></dl></section><section class="panel detail-section"><h2>Власник</h2>${owner ? `<p>${escape(owner.name)}</p><a class="button" href="${escape(detailUrl("owner", owner.id))}">Відкрити картку власника</a>` : "<p>Власника не вказано. Це не означає, що гараж вільний — дані потрібно уточнити.</p>"}</section>${issues.length ? `<section class="notice"><h2>Потрібно перевірити</h2><ul>${issues.map((i) => `<li>${escape(issueLabels[i.kind])}</li>`).join("")}</ul></section>` : ""}${contributions}${electricity}<p class="muted">Редагування та документи додамо в наступних версіях.</p></div>`;
+  screen.innerHTML = `<div class="details">${backLink(params)}${title(`Гараж ${label(g)}`, "Картка гаража · Вигадані дані")}<section class="panel"><h2>Про гараж</h2><dl><dt>Ряд</dt><dd>${escape(g.row || "Не вказано")}</dd><dt>Номер боксу</dt><dd>${escape(g.number || "Не вказано")}</dd><dt>Тип</dt><dd>${g.type === "technical" ? "Технічний бокс" : "Гараж"}</dd><dt>ID запису</dt><dd>${escape(g.id)}</dd></dl></section><details class="garage-category detail-section"><summary>Власник і орендар</summary><div class="garage-category-body"><div data-garage-people></div></div></details>${issues.length ? `<section class="notice"><h2>Потрібно перевірити</h2><ul>${issues.map((i) => `<li>${escape(issueLabels[i.kind])}</li>`).join("")}</ul></section>` : ""}${contributions}${electricity}</div>`;
   mountGarageSections();
 }
 function ownerPage(id, params) {
@@ -313,7 +318,7 @@ function ownerPage(id, params) {
   if (!o) return missingPage();
   const garages = ownerGarages(data, id);
   const sameNames = data.owners.filter((other) => other.id !== id && other.name === o.name);
-  screen.innerHTML = `<div class="details">${backLink(params)}${title(escape(o.name), "Картка власника · Вигадані дані")}<section class="panel"><h2>Про власника</h2><dl><dt>ID запису</dt><dd>${escape(o.id)}</dd><dt>Пов’язаних гаражів</dt><dd>${garages.length}</dd></dl><p class="muted">Контактні дані в цій тестовій версії не додані.</p></section>${sameNames.length ? '<p class="notice detail-section">У довіднику є інші люди з таким самим ім’ям. Їхні картки залишаються окремими.</p>' : ""}<section class="detail-section" aria-labelledby="owner-garages"><h2 id="owner-garages">Гаражі власника</h2>${garages.length ? `<ul class="record-list">${garages.map(garageItem).join("")}</ul>` : "<p>Пов’язаних гаражів поки немає.</p>"}</section></div>`;
+  screen.innerHTML = `<div class="details">${backLink(params)}${title(escape(o.name), "Картка власника · Вигадані дані")}<section class="panel"><h2>Про власника</h2><dl><dt>ID запису</dt><dd>${escape(o.id)}</dd><dt>Пов’язаних гаражів</dt><dd>${garages.length}</dd>${o.phone ? `<dt>Телефон</dt><dd>${escape(o.phone)}</dd>` : ""}${o.address ? `<dt>Адреса</dt><dd>${escape(o.address)}</dd>` : ""}</dl></section>${sameNames.length ? '<p class="notice detail-section">У довіднику є інші люди з таким самим ім’ям. Їхні картки залишаються окремими.</p>' : ""}<section class="detail-section" aria-labelledby="owner-garages"><h2 id="owner-garages">Гаражі власника</h2>${garages.length ? `<ul class="record-list">${garages.map(garageItem).join("")}</ul>` : "<p>Пов’язаних гаражів поки немає.</p>"}</section></div>`;
 }
 function missingPage() {
   screen.innerHTML =
@@ -419,6 +424,7 @@ async function load() {
     if (!response.ok || !response.headers.get("Content-Type")?.includes("application/json"))
       throw new Error("Load failed");
     data = prepareData(await response.json());
+    prepareGaragePeople(data);
     render(false);
   } catch {
     screen.setAttribute("aria-busy", "false");

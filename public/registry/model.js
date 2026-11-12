@@ -36,7 +36,10 @@ export function filterGarages(data, filters = {}) {
     .filter((g) => {
       const owner = data.ownerById.get(g.ownerId);
       return (
-        (!query || normalize(`${garageLabel(g)} ${owner?.name ?? ""}`).includes(query)) &&
+        (!query ||
+          normalize(
+            `${garageLabel(g)} ${owner?.name ?? ""} ${g.tenant?.person.name ?? ""}`,
+          ).includes(query)) &&
         (!filters.row || g.row === filters.row) &&
         (!filters.missing || !g.ownerId) &&
         (!filters.technical || g.type === "technical") &&

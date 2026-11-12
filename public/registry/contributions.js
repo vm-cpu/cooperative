@@ -1,5 +1,5 @@
 import { garageExamples } from "./garage-examples.js";
-import { isReadingDate, readingDateLabel as dateLabel } from "./meter-readings.js";
+import { formatCalendarDate, isCalendarDate, parseCalendarDate } from "./dates.js";
 import { filterGarages, garageLabel } from "./model.js";
 
 const currency = new Intl.NumberFormat("uk-UA", { style: "currency", currency: "UAH" });
@@ -27,7 +27,7 @@ function storedPayments(id) {
   return saved.filter(
     (item) =>
       item &&
-      isReadingDate(item.date) &&
+      isCalendarDate(item.date) &&
       typeof item.period === "string" &&
       validMonth(item.period) &&
       Number.isInteger(item.amount) &&
@@ -60,7 +60,7 @@ function cardTable(entries, escape) {
     <tbody>${entries
       .map(
         ({ date, amount, period }) => `<tr>
-      <td class="garage-table-value">${escape(dateLabel(date))}</td>
+      <td class="garage-table-value">${escape(formatCalendarDate(date))}</td>
       <td class="garage-table-value">${escape(tableAmount(amount))}</td>
       <td>${escape(periodLabel(period))}</td>
     </tr>`,
@@ -119,15 +119,14 @@ export function renderPaymentEditor(host, { id, garages, example }, escape, onSa
       editor.elements.garage.focus({ preventScroll: true });
       return;
     }
-    const dateParts = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(values.get("date").trim());
-    const date = dateParts ? `${dateParts[3]}-${dateParts[2]}-${dateParts[1]}` : "";
+    const date = parseCalendarDate(values.get("date"));
     const monthParts = /^(\d{2})\.(\d{4})$/.exec(values.get("period").trim());
     const period = monthParts ? `${monthParts[2]}-${monthParts[1]}` : "";
     const amountParts = /^(\d{1,7})(?:[,.](\d{1,2}))?$/.exec(values.get("amount").trim());
     const amount = amountParts
       ? Number(amountParts[1]) * 100 + Number((amountParts[2] ?? "").padEnd(2, "0"))
       : 0;
-    if (!isReadingDate(date)) {
+    if (!date) {
       error.textContent = "Введіть дійсну дату у форматі ДД.ММ.РРРР, наприклад 12.11.2026.";
       return;
     }
@@ -166,7 +165,7 @@ export function renderGarageContributions(host, id, escape, canEdit) {
   const history = contributionHistory(id);
   const entry = garageExamples.get(id)?.entry;
   host.innerHTML = `
-    ${entry ? `<p><strong>Вступний внесок.</strong> Сплачено ${escape(money(entry.amount))} · ${escape(dateLabel(entry.date))}</p>` : ""}
+    ${entry ? `<p><strong>Вступний внесок.</strong> Сплачено ${escape(money(entry.amount))} · ${escape(formatCalendarDate(entry.date))}</p>` : ""}
     <div data-payment-editor></div>
     ${history.available ? "" : '<p role="status">Збережені оплати недоступні в цьому браузері.</p>'}
     <div data-contributions>${cardTable(history.entries, escape)}</div>`;
@@ -206,7 +205,7 @@ export function renderContributionResults(host, data, query, garageHref, escape)
         .map(
           ({ garage, payment }) => `<tr>
         <th scope="row"><a class="contribution-garage-link" data-record="${escape(garage.id)}" href="${escape(garageHref(garage.id))}">${escape(garageLabel(garage))}</a>
-          <time datetime="${escape(payment.date)}">${escape(dateLabel(payment.date))}</time></th>
+          <time datetime="${escape(payment.date)}">${escape(formatCalendarDate(payment.date))}</time></th>
         <td>${payment.period ? escape(periodLabel(payment.period)) : "Вступний внесок"}</td>
         <td class="garage-table-value">${escape(tableAmount(payment.amount))}</td>
       </tr>`,
