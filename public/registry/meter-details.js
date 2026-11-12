@@ -26,10 +26,10 @@ export function renderMeterDetailsEditor(host, id, escape, onSave) {
       <summary>Редагувати дані лічильника</summary>
       <form aria-label="Дані лічильника">
         <div class="garage-form-fields">
-          <label>Номер лічильника<input name="meterNumber" type="text" maxlength="80" autocomplete="off"></label>
-          <label>Номер пломби лічильника<input name="sealNumber" type="text" maxlength="80" autocomplete="off"></label>
+          <label>Номер лічильника<input name="meterNumber" value="${escape(initial?.meterNumber ?? "")}" type="text" maxlength="80" autocomplete="off"></label>
+          <label>Номер пломби лічильника<input name="sealNumber" value="${escape(initial?.sealNumber ?? "")}" type="text" maxlength="80" autocomplete="off"></label>
         </div>
-        <div class="garage-form-actions"><button type="submit">Зберегти дані лічильника</button><button type="button" data-cancel>Скасувати</button></div>
+        <div class="garage-form-actions"><button type="button" data-save>Зберегти дані лічильника</button><button type="button" data-cancel>Скасувати</button></div>
         <p role="alert"></p>
       </form>
     </details>
@@ -44,14 +44,6 @@ export function renderMeterDetailsEditor(host, id, escape, onSave) {
     disclosure.querySelector("summary").focus();
   }
 
-  disclosure.addEventListener("toggle", () => {
-    if (!disclosure.open) return;
-    const details = readMeterDetails(id);
-    form.elements.meterNumber.value = details?.meterNumber ?? "";
-    form.elements.sealNumber.value = details?.sealNumber ?? "";
-    error.textContent = "";
-  });
-
   function save(event) {
     event.preventDefault();
     const details = {
@@ -65,18 +57,25 @@ export function renderMeterDetailsEditor(host, id, escape, onSave) {
       return;
     }
     host.querySelector("[data-meter-details-list]").innerHTML = meterDetailsList(details, escape);
+    form.elements.meterNumber.defaultValue = details.meterNumber;
+    form.elements.sealNumber.defaultValue = details.sealNumber;
+    error.textContent = "";
     status.textContent = "Дані лічильника збережено.";
     close();
     onSave(details);
   }
 
   // The demo preview can block native form submission.
-  form.querySelector('[type="submit"]').addEventListener("click", save);
+  form.querySelector("[data-save]").addEventListener("click", save);
   form.addEventListener("submit", save);
   form.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && event.target instanceof HTMLInputElement && !event.isComposing) {
       save(event);
     }
   });
-  form.querySelector("[data-cancel]").addEventListener("click", close);
+  form.querySelector("[data-cancel]").addEventListener("click", () => {
+    form.reset();
+    error.textContent = "";
+    close();
+  });
 }

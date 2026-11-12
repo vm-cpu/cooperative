@@ -918,40 +918,34 @@ label {
 
   .navigation a {
     grid-column: span 6;
+    min-height: 48px;
     margin: 0.12rem;
+    padding-block: 0.15rem;
     padding-inline: 0.22rem;
     font-size: clamp(18px, 0.82rem, 20px);
+    line-height: 1.15;
+    overflow-wrap: anywhere;
   }
 
-  .navigation a[data-view="garages"] {
-    grid-column: span 4;
-  }
-
-  .navigation a[data-view="owners"] {
-    grid-column: span 5;
+  .navigation a[data-view="garages"],
+  .navigation a[data-view="contributions"] {
+    grid-column: span 3;
   }
 
   .navigation a[data-view="rows"] {
-    grid-column: span 3;
+    grid-column: span 2;
+  }
+
+  .navigation a[data-view="owners"],
+  .navigation a[data-view="electricity"],
+  .navigation a[data-view="receipts"],
+  .navigation a[data-view="quality"] {
+    grid-column: span 4;
   }
 }
 
 .meter-table th:first-child {
   white-space: nowrap;
-}
-
-@media (min-width: 360px) and (max-width: 640px) {
-  .navigation a[data-view="electricity"] {
-    grid-column: span 4;
-  }
-
-  .navigation a[data-view="contributions"] {
-    grid-column: span 3;
-  }
-
-  .navigation a[data-view="receipts"] {
-    grid-column: span 5;
-  }
 }
 
 .contribution-overview th[scope="row"] {
