@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { garageExamples } from "../public/registry/garage-examples.js";
 
-test("five garages have complete examples and basic cards show meter readings", async ({
+test("five garages have complete examples and basic cards accept contributions and readings", async ({
   page,
 }) => {
   expect(garageExamples.size).toBe(5);
@@ -17,8 +17,9 @@ test("five garages have complete examples and basic cards show meter readings", 
   }
   await page.goto("/#garage/garage-04");
   await expect(page.getByRole("heading", { name: "Про гараж" })).toBeVisible();
-  await expect(page.locator(".garage-category > summary")).toHaveText(["Електрика"]);
-  await page.locator(".garage-category > summary").click();
+  const categories = page.locator(".garage-category > summary");
+  await expect(categories).toHaveText(["Внески", "Електрика"]);
+  await categories.filter({ hasText: "Електрика" }).click();
   await expect(page.getByText("Показників лічильника ще немає.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Внести показники" })).toBeVisible();
 });
@@ -42,9 +43,9 @@ test("mobile card tables, receipt and local contribution payment", async ({ page
     "Демонстраційна квитанція",
   );
   await card.getByText("Додати тестову оплату", { exact: true }).click();
-  await page.getByLabel("Дата оплати").fill("2026-11-10");
+  await page.getByLabel("Дата оплати").fill("10.11.2026");
   await page.getByLabel("Сума, грн").fill("123.45");
-  await page.getByLabel("За місяць").fill("2027-04");
+  await page.getByLabel("За місяць").fill("04.2027");
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
     .toBeLessThanOrEqual(375);
