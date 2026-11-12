@@ -1,23 +1,22 @@
+import { formatCalendarDate } from "./dates.js";
 import {
   renderContributionResults,
   renderGarageContributions,
   renderPaymentEditor,
 } from "./contributions.js";
-import {
-  canRecordMeterReadings,
-  renderElectricity,
-  renderGarageMeterReadings,
-} from "./electricity.js";
+import { renderElectricity, renderGarageMeterReadings } from "./electricity.js";
 import { garageMeterHistory } from "./meter-readings.js";
 import { garageExamples } from "./garage-examples.js";
 import { renderGarageExample } from "./garage-card.js";
 import { prepareGaragePeople, renderGaragePeople } from "./garage-people.js";
 import { renderMap } from "./map.js";
+import { renderOwnerEditor } from "./owner-editor.js";
 import {
   prepareData,
   filterGarages,
   filterOwners,
   garageLabel,
+  isConfirmedGarage,
   ownerGarages,
   rowSummary,
   qualityIssues,
@@ -99,6 +98,11 @@ function garageResults(filters) {
   const garages = filterGarages(data, filters);
   return `<div class="results-head"><p id="result-count">Знайдено: <strong>${garages.length}</strong> із ${data.garages.length}</p><p class="muted">За рядом та номером</p></div>${garages.length ? `<ul class="record-list" aria-label="Знайдені гаражі">${garages.map(garageItem).join("")}</ul>` : empty()}`;
 }
+function memberSinceLabel(owner) {
+  return owner.memberSince
+    ? `<time datetime="${escape(owner.memberSince)}">${escape(formatCalendarDate(owner.memberSince))}</time>`
+    : "";
+}
 function ownerResults(filters) {
   const owners = filterOwners(data, filters);
   return `<div class="results-head"><p id="result-count">Знайдено: <strong>${owners.length}</strong> із ${data.owners.length}</p><p class="muted">За ім’ям</p></div>${
@@ -106,7 +110,8 @@ function ownerResults(filters) {
       ? `<ul class="record-list" aria-label="Знайдені власники">${owners
           .map((o) => {
             const garages = ownerGarages(data, o.id);
-            return `<li class="record owner"><div><h2><a class="record-link" data-record="${escape(o.id)}" href="${escape(detailUrl("owner", o.id))}">${escape(o.name)}</a></h2><p class="record-meta">Гаражів: ${garages.length} · ${garages.map(garageLabel).map(escape).join(", ") || "Немає пов’язаних гаражів"}</p></div><a class="button quiet" href="${escape(detailUrl("owner", o.id))}" aria-label="Відкрити картку власника ${escape(o.name)}">Відкрити картку</a></li>`;
+            const memberSince = memberSinceLabel(o);
+            return `<li class="record owner"><div><h2><a class="record-link" data-record="${escape(o.id)}" href="${escape(detailUrl("owner", o.id))}">${escape(o.name)}</a></h2><p class="record-meta">Гаражів: ${garages.length} · ${garages.map(garageLabel).map(escape).join(", ") || "Немає пов’язаних гаражів"}</p>${memberSince ? `<p class="record-meta">Член кооперативу з ${memberSince}</p>` : ""}</div><a class="button quiet" href="${escape(detailUrl("owner", o.id))}" aria-label="Відкрити картку власника ${escape(o.name)}">Відкрити картку</a></li>`;
           })
           .join("")}</ul>`
       : empty()
@@ -136,6 +141,7 @@ function listPage(view, params) {
       `<span class="total">${garages ? data.garages.length : data.owners.length} ${garages ? "боксів" : "власників"}</span>`,
     ) +
     modes +
+    (garages ? "" : '<div id="owner-editor"></div>') +
     `<form class="filters" id="filters" role="search" aria-label="Пошук ${garages ? "гаражів" : "власників"}"><div class="fields"><label for="search">${garages ? "Номер гаража або ім’я людини" : "Ім’я власника"}<input id="search" name="q" type="search" autocomplete="off" value="${escape(filters.q)}" placeholder="${garages ? "Наприклад, 1-01" : "Наприклад, Тестова"}" aria-describedby="search-hint" /><span id="search-hint" class="hint">${garages ? "Можна ввести частину номера або імені." : "Однакові імена можуть належати різним людям."}</span></label>${
       garages
         ? `<div><label for="row">Ряд</label><select id="row" name="row"><option value="">Усі ряди</option>${rowSummary(
@@ -185,6 +191,17 @@ function listPage(view, params) {
     e.preventDefault();
     update();
   });
+  if (!garages) {
+    const editor = screen.querySelector("#owner-editor");
+    renderOwnerEditor(editor, data, escape, (owner) => {
+      if (!filterOwners(data, readFilters(route().params)).includes(owner)) {
+        form.elements.q.value = owner.name;
+        form.elements.multiple.checked = false;
+      }
+      screen.querySelector(".heading .total").textContent = `${data.owners.length} власників`;
+      update();
+    });
+  }
 }
 function rowsPage() {
   const summaries = rowSummary(data);
@@ -261,7 +278,7 @@ function contributionsPage(params) {
   }
   search.addEventListener("input", updateSearch);
   const issues = qualityIssues(data);
-  const garages = filterGarages(data).filter((garage) => canRecordMeterReadings(garage, issues));
+  const garages = filterGarages(data).filter((garage) => isConfirmedGarage(garage, issues));
   renderPaymentEditor(screen.querySelector("#contribution-editor"), { garages }, escape, (id) => {
     if (!filterGarages(data, { q: search.value }).some((garage) => garage.id === id)) {
       search.value = "";
@@ -278,7 +295,7 @@ function garagePage(id, params) {
   if (!g) return missingPage();
   const owner = data.ownerById.get(g.ownerId);
   const allIssues = qualityIssues(data);
-  const canEditReadings = canRecordMeterReadings(g, allIssues);
+  const canEditReadings = isConfirmedGarage(g, allIssues);
   function mountGarageSections() {
     renderGaragePeople(
       screen.querySelector("[data-garage-people]"),
@@ -317,8 +334,9 @@ function ownerPage(id, params) {
   const o = data.ownerById.get(id);
   if (!o) return missingPage();
   const garages = ownerGarages(data, id);
+  const memberSince = memberSinceLabel(o);
   const sameNames = data.owners.filter((other) => other.id !== id && other.name === o.name);
-  screen.innerHTML = `<div class="details">${backLink(params)}${title(escape(o.name), "Картка власника · Вигадані дані")}<section class="panel"><h2>Про власника</h2><dl><dt>ID запису</dt><dd>${escape(o.id)}</dd><dt>Пов’язаних гаражів</dt><dd>${garages.length}</dd>${o.phone ? `<dt>Телефон</dt><dd>${escape(o.phone)}</dd>` : ""}${o.address ? `<dt>Адреса</dt><dd>${escape(o.address)}</dd>` : ""}</dl></section>${sameNames.length ? '<p class="notice detail-section">У довіднику є інші люди з таким самим ім’ям. Їхні картки залишаються окремими.</p>' : ""}<section class="detail-section" aria-labelledby="owner-garages"><h2 id="owner-garages">Гаражі власника</h2>${garages.length ? `<ul class="record-list">${garages.map(garageItem).join("")}</ul>` : "<p>Пов’язаних гаражів поки немає.</p>"}</section></div>`;
+  screen.innerHTML = `<div class="details">${backLink(params)}${title(escape(o.name), "Картка власника · Вигадані дані")}<section class="panel"><h2>Про власника</h2><dl><dt>ID запису</dt><dd>${escape(o.id)}</dd><dt>Пов’язаних гаражів</dt><dd>${garages.length}</dd>${memberSince ? `<dt>Член кооперативу з</dt><dd>${memberSince}</dd>` : ""}${o.phone ? `<dt>Телефон</dt><dd>${escape(o.phone)}</dd>` : ""}${o.address ? `<dt>Адреса</dt><dd>${escape(o.address)}</dd>` : ""}</dl></section>${sameNames.length ? '<p class="notice detail-section">У довіднику є інші люди з таким самим ім’ям. Їхні картки залишаються окремими.</p>' : ""}<section class="detail-section" aria-labelledby="owner-garages"><h2 id="owner-garages">Гаражі власника</h2>${garages.length ? `<ul class="record-list">${garages.map(garageItem).join("")}</ul>` : "<p>Пов’язаних гаражів поки немає.</p>"}</section></div>`;
 }
 function missingPage() {
   screen.innerHTML =

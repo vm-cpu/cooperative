@@ -1,5 +1,5 @@
 import { formatCalendarDate, parseCalendarDate } from "./dates.js";
-import { filterGarages, garageLabel, qualityIssues } from "./model.js";
+import { filterGarages, garageLabel, isConfirmedGarage, qualityIssues } from "./model.js";
 import {
   garageMeterHistory,
   meterHistory,
@@ -19,18 +19,6 @@ function meterHistoryTable({ entries, available }, escape) {
     `<table class="garage-table"><caption>Показники лічильника</caption>
     <thead><tr><th scope="col">Дата</th><th scope="col">Показник, кВт·год</th></tr></thead>
     <tbody>${entries.map((item) => `<tr><td class="garage-table-value">${escape(formatCalendarDate(item.date))}</td><td>${escape(formatReading.format(item.value))}</td></tr>`).join("")}</tbody></table>`
-  );
-}
-
-export function canRecordMeterReadings(garage, issues) {
-  return Boolean(
-    garage.row &&
-    garage.number &&
-    garage.type !== "technical" &&
-    !issues.some(
-      ({ kind, garageIds }) =>
-        (kind === "duplicate" || kind === "ambiguous") && garageIds.includes(garage.id),
-    ),
   );
 }
 
@@ -168,7 +156,7 @@ export function renderElectricity(host, data, openRow, garageHref, setOpenRow, e
   const issues = qualityIssues(data);
   const rows = new Map();
   for (const garage of filterGarages(data)) {
-    if (!canRecordMeterReadings(garage, issues)) continue;
+    if (!isConfirmedGarage(garage, issues)) continue;
     if (!rows.has(garage.row)) rows.set(garage.row, []);
     rows.get(garage.row).push(garage);
   }
