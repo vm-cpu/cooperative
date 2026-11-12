@@ -1,3 +1,4 @@
+import { isReadingDate } from "./meter-readings.js";
 import { garageExamples } from "./garage-examples.js";
 
 const currency = new Intl.NumberFormat("uk-UA", { style: "currency", currency: "UAH" });
@@ -15,11 +16,6 @@ const periodLabel = (period) =>
     .map((value) => month.format(new Date(value + "-01T00:00:00Z")))
     .join(" – ");
 const validMonth = (period) => /^\d{4}-(0[1-9]|1[0-2])$/.test(period) && !period.startsWith("0000");
-const validDate = (date) => {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date.startsWith("0000")) return false;
-  const parsed = new Date(date + "T00:00:00Z");
-  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date;
-};
 const maxPayment = 100000000;
 const storageKey = (id) => `cooperative.demo.contributions.v1.${id}`;
 
@@ -30,7 +26,7 @@ function storedPayments(id) {
     (item) =>
       item &&
       typeof item.date === "string" &&
-      validDate(item.date) &&
+      isReadingDate(item.date) &&
       typeof item.period === "string" &&
       validMonth(item.period) &&
       Number.isInteger(item.amount) &&
@@ -123,12 +119,7 @@ export function renderGarageExample(host, garage, owner, ownerUrl, label, escape
     ${category(
       "Електрика",
       `
-      ${table(
-        "Показники лічильника",
-        ["Дата", "Показник, кВт·год"],
-        example.readings.map((item) => [dateLabel(item.date), item.value]),
-        escape,
-      )}
+      <div data-garage-meter></div>
       ${table(
         "Оплати за електрику",
         ["Дата", "Сума, грн", "За період"],
@@ -181,7 +172,7 @@ export function renderGarageExample(host, garage, owner, ownerUrl, label, escape
     const period = values.get("period");
     const amount = Math.round(Number(values.get("amount")) * 100);
     if (
-      !validDate(date) ||
+      !isReadingDate(date) ||
       !validMonth(period) ||
       !Number.isInteger(amount) ||
       amount < 1 ||

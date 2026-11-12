@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "dev": "wrangler dev",
+    "demo:build": "node scripts/build-demo.mjs",
     "deploy": "node scripts/deploy.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -20,6 +21,7 @@
     "@cloudflare/vitest-plugin": "^1.7.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.65.0",
+    "esbuild": "0.28.2",
     "eslint": "^10.14.0",
     "globals": "^17.14.0",
     "prettier": "^3.9.10",

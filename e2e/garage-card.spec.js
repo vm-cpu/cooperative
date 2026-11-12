@@ -2,7 +2,9 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { garageExamples } from "../public/registry/garage-examples.js";
 
-test("five garages have complete examples and other cards stay unchanged", async ({ page }) => {
+test("five garages have complete examples and basic cards show meter readings", async ({
+  page,
+}) => {
   expect(garageExamples.size).toBe(5);
   for (const id of garageExamples.keys()) {
     await page.goto(`/#garage/${id}`);
@@ -15,7 +17,10 @@ test("five garages have complete examples and other cards stay unchanged", async
   }
   await page.goto("/#garage/garage-04");
   await expect(page.getByRole("heading", { name: "Про гараж" })).toBeVisible();
-  await expect(page.locator(".garage-category")).toHaveCount(0);
+  await expect(page.locator(".garage-category > summary")).toHaveText(["Електрика"]);
+  await page.locator(".garage-category > summary").click();
+  await expect(page.getByText("Показників лічильника ще немає.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Внести показники" })).toBeVisible();
 });
 
 test("mobile card tables, receipt and local contribution payment", async ({ page }) => {
@@ -46,7 +51,7 @@ test("mobile card tables, receipt and local contribution payment", async ({ page
   const accessibility = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
   expect(accessibility.violations).toEqual([]);
   await page.getByRole("button", { name: "Зберегти оплату" }).click();
-  await expect(card.getByRole("status")).toContainText("збережено в історії");
+  await expect(card.getByRole("status").filter({ hasText: "збережено в історії" })).toBeVisible();
   await expect(card.getByRole("table", { name: "Історія членських внесків" })).toContainText(
     "123,45",
   );

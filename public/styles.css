@@ -867,3 +867,71 @@ label {
   width: 100%;
   min-width: 0;
 }
+
+.meter-table th[scope="row"] {
+  background: transparent;
+}
+
+.meter-table input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 12rem;
+  min-height: 48px;
+  padding-inline: 0.35rem;
+}
+
+.meter-garage-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  white-space: nowrap;
+}
+
+.meter-date {
+  display: block;
+  max-width: 18rem;
+  margin: 0.65rem 0;
+}
+
+.meter-date input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+[data-reading-error]:not(:empty) {
+  color: #8a2525;
+  font-weight: 700;
+}
+
+/* Keep the search field on the first phone screen with large text enabled. */
+@media (min-width: 360px) and (max-width: 640px) {
+  .navigation {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0;
+  }
+
+  .navigation a {
+    grid-column: span 6;
+    margin: 0.12rem;
+    padding-inline: 0.22rem;
+    font-size: clamp(18px, 0.82rem, 20px);
+  }
+
+  .navigation a[data-view="garages"] {
+    grid-column: span 4;
+  }
+
+  .navigation a[data-view="owners"] {
+    grid-column: span 5;
+  }
+
+  .navigation a[data-view="rows"] {
+    grid-column: span 3;
+  }
+}
+
+.meter-table th:first-child {
+  white-space: nowrap;
+}
