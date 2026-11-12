@@ -1,3 +1,4 @@
+import { renderContributionResults, renderGarageContributions } from "./contributions.js";
 import {
   canRecordMeterReadings,
   renderElectricity,
@@ -25,6 +26,7 @@ const views = {
   owners: "Власники",
   rows: "Ряди",
   electricity: "Електрика",
+  contributions: "Внески",
   quality: "Якість даних",
 };
 let data;
@@ -68,7 +70,9 @@ function detailUrl(view, id) {
   return url(`${view}/${encodeURIComponent(id)}`, { from: origin });
 }
 function safeOrigin(value) {
-  return /^#(garages|owners|rows|electricity|quality)(\?|$)/.test(value || "") ? value : "#garages";
+  return /^#(garages|owners|rows|electricity|contributions|quality)(\?|$)/.test(value || "")
+    ? value
+    : "#garages";
 }
 function announce(message) {
   clearTimeout(announceTimer);
@@ -207,7 +211,13 @@ function backLink(params) {
   const map =
     origin.startsWith("#garages?") &&
     new URLSearchParams(origin.split("?")[1]).get("mode") === "map";
-  const destination = origin.startsWith("#electricity") ? "ряду" : map ? "карти" : "списку";
+  const destination = origin.startsWith("#electricity")
+    ? "ряду"
+    : origin.startsWith("#contributions")
+      ? "внесків"
+      : map
+        ? "карти"
+        : "списку";
   return `<a class="back" data-back href="${escape(origin)}">← Повернутися до ${destination}</a>`;
 }
 function electricityPage(params) {
@@ -226,19 +236,37 @@ function electricityPage(params) {
     escape,
   );
 }
+function contributionsPage(params) {
+  screen.innerHTML =
+    title("Внески", "Членські та вступні внески по гаражах.") +
+    `<section class="panel"><label class="meter-date">Гараж або власник
+      <input id="contribution-search" type="search" value="${escape(params.get("q") || "")}">
+    </label><div id="contribution-results"></div></section>`;
+  const search = screen.querySelector("#contribution-search");
+  const results = screen.querySelector("#contribution-results");
+  const update = () => {
+    renderContributionResults(results, data, search.value, (id) => detailUrl("garage", id), escape);
+  };
+  search.addEventListener("input", () => {
+    history.replaceState(null, "", url("contributions", { q: search.value }));
+    activeUrl = location.href;
+    update();
+  });
+  update();
+}
+
 function garagePage(id, params) {
   const g = data.garages.find((g) => g.id === id);
   if (!g) return missingPage();
   const owner = data.ownerById.get(g.ownerId);
   const allIssues = qualityIssues(data);
   const canEditReadings = canRecordMeterReadings(g, allIssues);
-  const mountMeter = () =>
-    renderGarageMeterReadings(
-      screen.querySelector("[data-garage-meter]"),
-      g,
-      escape,
-      canEditReadings,
-    );
+  function mountGarageSections() {
+    const meter = screen.querySelector("[data-garage-meter]");
+    const contributions = screen.querySelector("[data-garage-contributions]");
+    if (meter) renderGarageMeterReadings(meter, g, escape, canEditReadings);
+    if (contributions) renderGarageContributions(contributions, id, escape, canEditReadings);
+  }
   if (owner && garageExamples.has(id)) {
     screen.innerHTML = `<div class="details">${backLink(params)}${title(`Гараж ${label(g)}`, "Картка гаража · Вигадані дані")}<div id="garage-example"></div></div>`;
     renderGarageExample(
@@ -249,16 +277,19 @@ function garagePage(id, params) {
       garageLabel(g),
       escape,
     );
-    mountMeter();
+    mountGarageSections();
     return;
   }
   const issues = allIssues.filter((i) => i.garageIds.includes(id));
+  const contributions = canEditReadings
+    ? '<details class="garage-category detail-section"><summary>Внески</summary><div class="garage-category-body"><div data-garage-contributions></div></div></details>'
+    : "";
   const electricity =
     canEditReadings || garageMeterHistory(id).entries.length
       ? `<details class="garage-category detail-section"><summary>Електрика</summary><div class="garage-category-body"><div data-garage-meter></div></div></details>`
       : "";
-  screen.innerHTML = `<div class="details">${backLink(params)}${title(`Гараж ${label(g)}`, "Картка гаража · Вигадані дані")}<section class="panel"><h2>Про гараж</h2><dl><dt>Ряд</dt><dd>${escape(g.row || "Не вказано")}</dd><dt>Номер боксу</dt><dd>${escape(g.number || "Не вказано")}</dd><dt>Тип</dt><dd>${g.type === "technical" ? "Технічний бокс" : "Гараж"}</dd><dt>ID запису</dt><dd>${escape(g.id)}</dd></dl></section><section class="panel detail-section"><h2>Власник</h2>${owner ? `<p>${escape(owner.name)}</p><a class="button" href="${escape(detailUrl("owner", owner.id))}">Відкрити картку власника</a>` : "<p>Власника не вказано. Це не означає, що гараж вільний — дані потрібно уточнити.</p>"}</section>${issues.length ? `<section class="notice"><h2>Потрібно перевірити</h2><ul>${issues.map((i) => `<li>${escape(issueLabels[i.kind])}</li>`).join("")}</ul></section>` : ""}${electricity}<p class="muted">Редагування, документи й платежі додамо в наступних версіях.</p></div>`;
-  if (electricity) mountMeter();
+  screen.innerHTML = `<div class="details">${backLink(params)}${title(`Гараж ${label(g)}`, "Картка гаража · Вигадані дані")}<section class="panel"><h2>Про гараж</h2><dl><dt>Ряд</dt><dd>${escape(g.row || "Не вказано")}</dd><dt>Номер боксу</dt><dd>${escape(g.number || "Не вказано")}</dd><dt>Тип</dt><dd>${g.type === "technical" ? "Технічний бокс" : "Гараж"}</dd><dt>ID запису</dt><dd>${escape(g.id)}</dd></dl></section><section class="panel detail-section"><h2>Власник</h2>${owner ? `<p>${escape(owner.name)}</p><a class="button" href="${escape(detailUrl("owner", owner.id))}">Відкрити картку власника</a>` : "<p>Власника не вказано. Це не означає, що гараж вільний — дані потрібно уточнити.</p>"}</section>${issues.length ? `<section class="notice"><h2>Потрібно перевірити</h2><ul>${issues.map((i) => `<li>${escape(issueLabels[i.kind])}</li>`).join("")}</ul></section>` : ""}${contributions}${electricity}<p class="muted">Редагування та документи додамо в наступних версіях.</p></div>`;
+  mountGarageSections();
 }
 function ownerPage(id, params) {
   const o = data.ownerById.get(id);
@@ -289,6 +320,7 @@ function render(focus = true) {
   if (["garages", "owners"].includes(view)) listPage(view, params);
   else if (view === "rows") rowsPage();
   else if (view === "electricity") electricityPage(params);
+  else if (view === "contributions") contributionsPage(params);
   else if (view === "quality") qualityPage();
   else if (view === "garage") garagePage(id, params);
   else if (view === "owner") ownerPage(id, params);

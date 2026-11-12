@@ -935,3 +935,40 @@ label {
 .meter-table th:first-child {
   white-space: nowrap;
 }
+
+@media (min-width: 360px) and (max-width: 640px) {
+  .navigation a[data-view="electricity"] {
+    grid-column: span 4;
+  }
+
+  .navigation a[data-view="contributions"] {
+    grid-column: span 3;
+  }
+
+  .navigation a[data-view="quality"] {
+    grid-column: span 5;
+  }
+}
+
+.contribution-overview th[scope="row"] {
+  background: transparent;
+  white-space: nowrap;
+}
+
+.contribution-overview time {
+  display: block;
+  color: var(--muted);
+  font-size: 0.85em;
+  font-weight: 400;
+}
+
+.contribution-garage-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+[data-payment-error]:not(:empty) {
+  color: #8a2525;
+  font-weight: 700;
+}
