@@ -1,4 +1,8 @@
-import { renderContributionResults, renderGarageContributions } from "./contributions.js";
+import {
+  renderContributionResults,
+  renderGarageContributions,
+  renderPaymentEditor,
+} from "./contributions.js";
 import {
   canRecordMeterReadings,
   renderElectricity,
@@ -239,17 +243,30 @@ function electricityPage(params) {
 function contributionsPage(params) {
   screen.innerHTML =
     title("Внески", "Членські та вступні внески по гаражах.") +
-    `<section class="panel"><label class="meter-date">Гараж або власник
-      <input id="contribution-search" type="search" value="${escape(params.get("q") || "")}">
-    </label><div id="contribution-results"></div></section>`;
+    `<section class="panel"><div id="contribution-editor"></div>
+      <label class="meter-date">Гараж або власник
+        <input id="contribution-search" type="search" value="${escape(params.get("q") || "")}">
+      </label><div id="contribution-results"></div>
+    </section>`;
   const search = screen.querySelector("#contribution-search");
   const results = screen.querySelector("#contribution-results");
   const update = () => {
     renderContributionResults(results, data, search.value, (id) => detailUrl("garage", id), escape);
   };
-  search.addEventListener("input", () => {
+  function updateSearch() {
     history.replaceState(null, "", url("contributions", { q: search.value }));
     activeUrl = location.href;
+    update();
+  }
+  search.addEventListener("input", updateSearch);
+  const issues = qualityIssues(data);
+  const garages = filterGarages(data).filter((garage) => canRecordMeterReadings(garage, issues));
+  renderPaymentEditor(screen.querySelector("#contribution-editor"), { garages }, escape, (id) => {
+    if (!filterGarages(data, { q: search.value }).some((garage) => garage.id === id)) {
+      search.value = "";
+      updateSearch();
+      return;
+    }
     update();
   });
   update();

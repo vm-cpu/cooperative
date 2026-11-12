@@ -862,7 +862,7 @@ label {
   min-width: 0;
 }
 
-.garage-form-fields input {
+.garage-form-fields :is(input, select) {
   display: block;
   width: 100%;
   min-width: 0;

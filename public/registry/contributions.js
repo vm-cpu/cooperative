@@ -68,15 +68,24 @@ function cardTable(entries, escape) {
       .join("")}</tbody></table>`;
 }
 
-export function renderGarageContributions(host, id, escape, canEdit) {
-  const history = contributionHistory(id);
-  const entry = garageExamples.get(id)?.entry;
-  const form =
-    canEdit && history.available
-      ? `<details class="garage-form"><summary>Додати тестову оплату</summary>
-      <form aria-label="Тестова оплата внеску">
-        <p class="muted">Дата у форматі ДД.ММ.РРРР, місяць у форматі ММ.РРРР. Тестова оплата зберігається в браузері.${entry ? " Борг і оплачений період наведені для прикладу." : ""}</p>
+export function renderPaymentEditor(host, { id, garages, example }, escape, onSave) {
+  if (garages && !garages.length) {
+    host.innerHTML = "<p>Немає гаражів, для яких можна додати оплату.</p>";
+    return;
+  }
+  const garageField = garages
+    ? `<label>Гараж<select name="garage" aria-required="true">
+        <option value="">Виберіть гараж</option>
+        ${garages.map((garage) => `<option value="${escape(garage.id)}">${escape(garageLabel(garage))}</option>`).join("")}
+      </select></label>`
+    : "";
+  host.innerHTML = `
+    <details class="garage-form">
+      <summary>${garages ? "Додати оплату" : "Додати тестову оплату"}</summary>
+      <form aria-label="Тестова оплата членського внеску">
+        <p class="muted">Дата у форматі ДД.ММ.РРРР, місяць у форматі ММ.РРРР. Тестова оплата зберігається в браузері.${example ? " Борг і оплачений період наведені для прикладу." : ""}</p>
         <div class="garage-form-fields">
+          ${garageField}
           <label>Дата оплати<input name="date" type="text" placeholder="12.11.2026" autocomplete="off" aria-required="true"></label>
           <label>Сума, грн<input name="amount" type="text" inputmode="decimal" placeholder="1500,00" autocomplete="off" aria-required="true"></label>
           <label>За місяць<input name="period" type="text" placeholder="11.2026" autocomplete="off" aria-required="true"></label>
@@ -84,15 +93,8 @@ export function renderGarageContributions(host, id, escape, canEdit) {
         <div class="garage-form-actions"><button type="button" data-save-payment>Зберегти оплату</button><button type="button" data-cancel-payment>Скасувати</button></div>
         <p data-payment-error role="alert"></p>
       </form>
-    </details>`
-      : "";
-  host.innerHTML = `
-    ${entry ? `<p><strong>Вступний внесок.</strong> Сплачено ${escape(money(entry.amount))} · ${escape(dateLabel(entry.date))}</p>` : ""}
-    ${form}
-    <p data-payment-status role="status">${history.available ? "" : "Збережені оплати недоступні в цьому браузері."}</p>
-    <div data-contributions>${cardTable(history.entries, escape)}</div>`;
-  if (!form) return;
-
+    </details>
+    <p data-payment-status role="status"></p>`;
   const editor = host.querySelector("form");
   const disclosure = host.querySelector(".garage-form");
   const summary = disclosure.querySelector("summary");
@@ -111,6 +113,12 @@ export function renderGarageContributions(host, id, escape, canEdit) {
 
   function save() {
     const values = new FormData(editor);
+    const garageId = id ?? values.get("garage");
+    if (garages && !garages.some((garage) => garage.id === garageId)) {
+      error.textContent = "Виберіть гараж, для якого додаєте оплату.";
+      editor.elements.garage.focus({ preventScroll: true });
+      return;
+    }
     const dateParts = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(values.get("date").trim());
     const date = dateParts ? `${dateParts[3]}-${dateParts[2]}-${dateParts[1]}` : "";
     const monthParts = /^(\d{2})\.(\d{4})$/.exec(values.get("period").trim());
@@ -133,18 +141,15 @@ export function renderGarageContributions(host, id, escape, canEdit) {
     }
 
     try {
-      const payments = [...storedPayments(id), { date, amount, period }];
-      localStorage.setItem(storageKey(id), JSON.stringify(payments));
+      const payments = [...storedPayments(garageId), { date, amount, period }];
+      localStorage.setItem(storageKey(garageId), JSON.stringify(payments));
     } catch {
       error.textContent = "Не вдалося зберегти оплату. Перевірте налаштування браузера.";
       return;
     }
-    host.querySelector("[data-contributions]").innerHTML = cardTable(
-      contributionHistory(id).entries,
-      escape,
-    );
     closeForm();
     status.textContent = `Тестову оплату ${money(amount)} збережено в історії.`;
+    onSave(garageId);
   }
 
   // The demo preview may block native submission while allowing button clicks.
@@ -155,6 +160,29 @@ export function renderGarageContributions(host, id, escape, canEdit) {
       save();
     }
   });
+}
+
+export function renderGarageContributions(host, id, escape, canEdit) {
+  const history = contributionHistory(id);
+  const entry = garageExamples.get(id)?.entry;
+  host.innerHTML = `
+    ${entry ? `<p><strong>Вступний внесок.</strong> Сплачено ${escape(money(entry.amount))} · ${escape(dateLabel(entry.date))}</p>` : ""}
+    <div data-payment-editor></div>
+    ${history.available ? "" : '<p role="status">Збережені оплати недоступні в цьому браузері.</p>'}
+    <div data-contributions>${cardTable(history.entries, escape)}</div>`;
+  if (canEdit && history.available) {
+    renderPaymentEditor(
+      host.querySelector("[data-payment-editor]"),
+      { id, example: Boolean(entry) },
+      escape,
+      () => {
+        host.querySelector("[data-contributions]").innerHTML = cardTable(
+          contributionHistory(id).entries,
+          escape,
+        );
+      },
+    );
+  }
 }
 
 export function renderContributionResults(host, data, query, garageHref, escape) {

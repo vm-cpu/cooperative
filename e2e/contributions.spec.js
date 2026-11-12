@@ -61,4 +61,29 @@ test("the standalone preview saves a contribution and lists it with the other pa
   await page.reload();
   await navigation.getByRole("link", { name: "Внески", exact: true }).click();
   await expect(newPayment).toContainText(/1\s500,25/);
+  await search.fill("1-01");
+  await screen.getByText("Додати оплату", { exact: true }).click();
+  const garage = screen.getByLabel("Гараж", { exact: true });
+  await screen.getByLabel("Дата оплати", { exact: true }).fill("13.11.2026");
+  await screen.getByLabel("Сума, грн", { exact: true }).fill("200,50");
+  const paidMonth = screen.getByLabel("За місяць", { exact: true });
+  await paidMonth.fill("12.2026");
+  await screen.getByRole("button", { name: "Зберегти оплату" }).click();
+  await expect(screen.getByRole("alert")).toContainText("Виберіть гараж");
+  await garage.selectOption("garage-02");
+  await paidMonth.press("Enter");
+
+  await expect(screen.getByRole("status").filter({ hasText: "збережено в історії" })).toBeVisible();
+  await expect(search).toHaveValue("");
+  const overviewPayment = overview.getByRole("row", { name: /13.11.2026/ });
+  await expect(overviewPayment).toContainText("200,50");
+  await expect(overviewPayment).toContainText("грудень 2026");
+  await page.reload();
+  await navigation.getByRole("link", { name: "Внески", exact: true }).click();
+  await overviewPayment.getByRole("link", { name: "1-2", exact: true }).click();
+  await screen
+    .locator("#garage-example .garage-category > summary")
+    .filter({ hasText: /^Внески$/ })
+    .click();
+  await expect(history.getByRole("row", { name: /13.11.2026/ })).toContainText("200,50");
 });
