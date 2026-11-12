@@ -64,6 +64,8 @@ test("the downloadable HTML shares readings between a row and garage card", asyn
   await mkdir(dirname(file), { recursive: true });
   await writeFile(file, html);
   await page.goto(pathToFileURL(file).href);
+  await expect(page.getByRole("heading", { name: "Гаражі", exact: true })).toBeVisible();
+  await page.getByRole("navigation").getByRole("link", { name: "Електрика", exact: true }).click();
   await saveSingleReading(page);
   await page.reload();
   await saveFromGarageCard(page, true);
@@ -75,7 +77,7 @@ test("the same HTML saves when the preview blocks native form submission", async
   await page.route("**/demo-preview", (route) =>
     route.fulfill({
       contentType: "text/html",
-      body: '<iframe title="Демо" src="/demo-document" sandbox="allow-scripts allow-same-origin"></iframe>',
+      body: '<iframe title="Демо" src="/demo-document#electricity" sandbox="allow-scripts allow-same-origin"></iframe>',
     }),
   );
   await page.route("**/demo-document", (route) =>
