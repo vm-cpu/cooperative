@@ -1,3 +1,5 @@
+import { meterHistoryTable, renderElectricity } from "./electricity.js";
+import { garageMeterHistory } from "./meter-readings.js";
 import { garageExamples } from "./garage-examples.js";
 import { renderGarageExample } from "./garage-card.js";
 import { renderMap } from "./map.js";
@@ -14,7 +16,13 @@ import {
 const screen = document.querySelector("#screen");
 const main = document.querySelector("#main");
 const announcer = document.querySelector("#announcer");
-const views = { garages: "Гаражі", owners: "Власники", rows: "Ряди", quality: "Якість даних" };
+const views = {
+  garages: "Гаражі",
+  owners: "Власники",
+  rows: "Ряди",
+  electricity: "Електрика",
+  quality: "Якість даних",
+};
 let data;
 let activeUrl = location.href;
 let announceTimer;
@@ -56,7 +64,7 @@ function detailUrl(view, id) {
   return url(`${view}/${encodeURIComponent(id)}`, { from: origin });
 }
 function safeOrigin(value) {
-  return /^#(garages|owners|rows|quality)(\?|$)/.test(value || "") ? value : "#garages";
+  return /^#(garages|owners|rows|electricity|quality)(\?|$)/.test(value || "") ? value : "#garages";
 }
 function announce(message) {
   clearTimeout(announceTimer);
@@ -195,7 +203,24 @@ function backLink(params) {
   const map =
     origin.startsWith("#garages?") &&
     new URLSearchParams(origin.split("?")[1]).get("mode") === "map";
-  return `<a class="back" data-back href="${escape(origin)}">← Повернутися до ${map ? "карти" : "списку"}</a>`;
+  const destination = origin.startsWith("#electricity") ? "ряду" : map ? "карти" : "списку";
+  return `<a class="back" data-back href="${escape(origin)}">← Повернутися до ${destination}</a>`;
+}
+function electricityPage(params) {
+  screen.innerHTML =
+    title("Електрика", "Відкрийте ряд, щоб переглянути або внести показники.") +
+    '<p class="muted">Тестові показники зберігаються в цьому браузері.</p><div class="garage-categories" id="electricity-rows"></div>';
+  renderElectricity(
+    screen.querySelector("#electricity-rows"),
+    data,
+    params.get("row"),
+    (id, row) => url(`garage/${encodeURIComponent(id)}`, { from: url("electricity", { row }) }),
+    (row) => {
+      history.replaceState(null, "", url("electricity", { row }));
+      activeUrl = location.href;
+    },
+    escape,
+  );
 }
 function garagePage(id, params) {
   const g = data.garages.find((g) => g.id === id);
@@ -214,7 +239,10 @@ function garagePage(id, params) {
     return;
   }
   const issues = qualityIssues(data).filter((i) => i.garageIds.includes(id));
-  screen.innerHTML = `<div class="details">${backLink(params)}${title(`Гараж ${label(g)}`, "Картка гаража · Вигадані дані")}<section class="panel"><h2>Про гараж</h2><dl><dt>Ряд</dt><dd>${escape(g.row || "Не вказано")}</dd><dt>Номер боксу</dt><dd>${escape(g.number || "Не вказано")}</dd><dt>Тип</dt><dd>${g.type === "technical" ? "Технічний бокс" : "Гараж"}</dd><dt>ID запису</dt><dd>${escape(g.id)}</dd></dl></section><section class="panel detail-section"><h2>Власник</h2>${owner ? `<p>${escape(owner.name)}</p><a class="button" href="${escape(detailUrl("owner", owner.id))}">Відкрити картку власника</a>` : "<p>Власника не вказано. Це не означає, що гараж вільний — дані потрібно уточнити.</p>"}</section>${issues.length ? `<section class="notice"><h2>Потрібно перевірити</h2><ul>${issues.map((i) => `<li>${escape(issueLabels[i.kind])}</li>`).join("")}</ul></section>` : ""}<p class="muted">Редагування, документи й платежі додамо в наступних версіях.</p></div>`;
+  const electricity = garageMeterHistory(id).entries.length
+    ? `<details class="garage-category detail-section"><summary>Електрика</summary><div class="garage-category-body">${meterHistoryTable(id, escape)}</div></details>`
+    : "";
+  screen.innerHTML = `<div class="details">${backLink(params)}${title(`Гараж ${label(g)}`, "Картка гаража · Вигадані дані")}<section class="panel"><h2>Про гараж</h2><dl><dt>Ряд</dt><dd>${escape(g.row || "Не вказано")}</dd><dt>Номер боксу</dt><dd>${escape(g.number || "Не вказано")}</dd><dt>Тип</dt><dd>${g.type === "technical" ? "Технічний бокс" : "Гараж"}</dd><dt>ID запису</dt><dd>${escape(g.id)}</dd></dl></section><section class="panel detail-section"><h2>Власник</h2>${owner ? `<p>${escape(owner.name)}</p><a class="button" href="${escape(detailUrl("owner", owner.id))}">Відкрити картку власника</a>` : "<p>Власника не вказано. Це не означає, що гараж вільний — дані потрібно уточнити.</p>"}</section>${issues.length ? `<section class="notice"><h2>Потрібно перевірити</h2><ul>${issues.map((i) => `<li>${escape(issueLabels[i.kind])}</li>`).join("")}</ul></section>` : ""}${electricity}<p class="muted">Редагування, документи й платежі додамо в наступних версіях.</p></div>`;
 }
 function ownerPage(id, params) {
   const o = data.ownerById.get(id);
@@ -244,6 +272,7 @@ function render(focus = true) {
   });
   if (["garages", "owners"].includes(view)) listPage(view, params);
   else if (view === "rows") rowsPage();
+  else if (view === "electricity") electricityPage(params);
   else if (view === "quality") qualityPage();
   else if (view === "garage") garagePage(id, params);
   else if (view === "owner") ownerPage(id, params);
@@ -284,7 +313,16 @@ document.addEventListener("click", (e) => {
     main.scrollIntoView({ block: "start", behavior: "instant" });
     return;
   }
-  const record = link.closest(".record")?.querySelector("[data-record]")?.dataset.record;
+  const record =
+    link.dataset.record ?? link.closest(".record")?.querySelector("[data-record]")?.dataset.record;
+  const meterLink = link.matches(".meter-garage-link");
+  if (meterLink) {
+    const from = new URLSearchParams(link.hash.split("?")[1]).get("from");
+    positions.set(new URL(safeOrigin(from), location.href).href, {
+      y: window.scrollY,
+      record: link.dataset.record,
+    });
+  }
   positions.set(activeUrl, { y: window.scrollY, record });
 });
 window.addEventListener("hashchange", () => {

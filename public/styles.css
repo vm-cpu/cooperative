@@ -867,3 +867,40 @@ label {
   width: 100%;
   min-width: 0;
 }
+
+.meter-table th[scope="row"] {
+  background: transparent;
+}
+
+.meter-table input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 12rem;
+  min-height: 48px;
+  padding-inline: 0.35rem;
+}
+
+.meter-garage-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  white-space: nowrap;
+}
+
+.meter-date {
+  display: block;
+  max-width: 18rem;
+  margin: 0.65rem 0;
+}
+
+.meter-date input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+[data-reading-error]:not(:empty) {
+  color: #8a2525;
+  font-weight: 700;
+}
