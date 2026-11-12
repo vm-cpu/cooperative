@@ -1,4 +1,3 @@
-import { meterHistoryTable } from "./electricity.js";
 import { isReadingDate } from "./meter-readings.js";
 import { garageExamples } from "./garage-examples.js";
 
@@ -120,7 +119,7 @@ export function renderGarageExample(host, garage, owner, ownerUrl, label, escape
     ${category(
       "Електрика",
       `
-      ${meterHistoryTable(garage.id, escape)}
+      <div data-garage-meter></div>
       ${table(
         "Оплати за електрику",
         ["Дата", "Сума, грн", "За період"],

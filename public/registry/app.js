@@ -1,4 +1,8 @@
-import { meterHistoryTable, renderElectricity } from "./electricity.js";
+import {
+  canRecordMeterReadings,
+  renderElectricity,
+  renderGarageMeterReadings,
+} from "./electricity.js";
 import { garageMeterHistory } from "./meter-readings.js";
 import { garageExamples } from "./garage-examples.js";
 import { renderGarageExample } from "./garage-card.js";
@@ -226,6 +230,15 @@ function garagePage(id, params) {
   const g = data.garages.find((g) => g.id === id);
   if (!g) return missingPage();
   const owner = data.ownerById.get(g.ownerId);
+  const allIssues = qualityIssues(data);
+  const canEditReadings = canRecordMeterReadings(g, allIssues);
+  const mountMeter = () =>
+    renderGarageMeterReadings(
+      screen.querySelector("[data-garage-meter]"),
+      g,
+      escape,
+      canEditReadings,
+    );
   if (owner && garageExamples.has(id)) {
     screen.innerHTML = `<div class="details">${backLink(params)}${title(`Гараж ${label(g)}`, "Картка гаража · Вигадані дані")}<div id="garage-example"></div></div>`;
     renderGarageExample(
@@ -236,13 +249,16 @@ function garagePage(id, params) {
       garageLabel(g),
       escape,
     );
+    mountMeter();
     return;
   }
-  const issues = qualityIssues(data).filter((i) => i.garageIds.includes(id));
-  const electricity = garageMeterHistory(id).entries.length
-    ? `<details class="garage-category detail-section"><summary>Електрика</summary><div class="garage-category-body">${meterHistoryTable(id, escape)}</div></details>`
-    : "";
+  const issues = allIssues.filter((i) => i.garageIds.includes(id));
+  const electricity =
+    canEditReadings || garageMeterHistory(id).entries.length
+      ? `<details class="garage-category detail-section"><summary>Електрика</summary><div class="garage-category-body"><div data-garage-meter></div></div></details>`
+      : "";
   screen.innerHTML = `<div class="details">${backLink(params)}${title(`Гараж ${label(g)}`, "Картка гаража · Вигадані дані")}<section class="panel"><h2>Про гараж</h2><dl><dt>Ряд</dt><dd>${escape(g.row || "Не вказано")}</dd><dt>Номер боксу</dt><dd>${escape(g.number || "Не вказано")}</dd><dt>Тип</dt><dd>${g.type === "technical" ? "Технічний бокс" : "Гараж"}</dd><dt>ID запису</dt><dd>${escape(g.id)}</dd></dl></section><section class="panel detail-section"><h2>Власник</h2>${owner ? `<p>${escape(owner.name)}</p><a class="button" href="${escape(detailUrl("owner", owner.id))}">Відкрити картку власника</a>` : "<p>Власника не вказано. Це не означає, що гараж вільний — дані потрібно уточнити.</p>"}</section>${issues.length ? `<section class="notice"><h2>Потрібно перевірити</h2><ul>${issues.map((i) => `<li>${escape(issueLabels[i.kind])}</li>`).join("")}</ul></section>` : ""}${electricity}<p class="muted">Редагування, документи й платежі додамо в наступних версіях.</p></div>`;
+  if (electricity) mountMeter();
 }
 function ownerPage(id, params) {
   const o = data.ownerById.get(id);
