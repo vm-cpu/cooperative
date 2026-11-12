@@ -46,7 +46,6 @@ export async function buildDemo() {
       "</body>",
       () => `
       <script>${preferences}</script>
-      <script>if (!location.hash) history.replaceState(null, "", "#electricity");</script>
       <script>${script}</script>
       </body>`,
     );
