@@ -1,0 +1,56 @@
+import { test, expect } from "@playwright/test";
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
+import { pathToFileURL } from "node:url";
+import { buildDemo } from "../scripts/build-demo.mjs";
+
+let html;
+test.beforeAll(async () => {
+  html = await buildDemo();
+});
+
+async function saveSingleReading(screen) {
+  await screen.getByText("Ряд 1", { exact: true }).click();
+  await screen.getByRole("button", { name: "Внести показники" }).click();
+  await screen.getByLabel("Дата зняття показників").pressSequentially("12.11.2026");
+  await screen.getByLabel("Новий показник гаража 1-01", { exact: true }).pressSequentially("1272");
+  await screen.getByRole("button", { name: "Зберегти показники" }).click();
+  await expect(
+    screen.getByRole("status").filter({ hasText: "Збережено показників: 1" }),
+  ).toBeVisible();
+  const garage = screen.getByRole("row", { name: /1-01/ });
+  await expect(garage).toContainText(/1\s272/);
+  await expect(garage).toContainText("12.11.2026");
+  await expect(screen.getByRole("row", { name: /1-2/ })).toContainText("587");
+}
+
+test("the downloadable HTML saves one reading and keeps it after reload", async ({
+  page,
+}, info) => {
+  const file = info.outputPath("cooperative-demo.html");
+  await mkdir(dirname(file), { recursive: true });
+  await writeFile(file, html);
+  await page.goto(pathToFileURL(file).href);
+  await saveSingleReading(page);
+  await page.reload();
+  await page.getByRole("link", { name: "1-01", exact: true }).click();
+  await page
+    .locator("#garage-example summary")
+    .filter({ hasText: /^Електрика$/ })
+    .click();
+  await expect(page.getByRole("row", { name: /12.11.2026/ })).toContainText(/1\s272/);
+});
+
+test("the same HTML saves when the preview blocks native form submission", async ({ page }) => {
+  await page.route("**/demo-preview", (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: '<iframe title="Демо" src="/demo-document" sandbox="allow-scripts allow-same-origin"></iframe>',
+    }),
+  );
+  await page.route("**/demo-document", (route) =>
+    route.fulfill({ contentType: "text/html", body: html }),
+  );
+  await page.goto("/demo-preview");
+  await saveSingleReading(page.frameLocator("iframe"));
+});
