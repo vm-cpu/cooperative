@@ -94,7 +94,7 @@ export function renderElectricity(host, data, openRow, garageHref, setOpenRow, e
           <p class="muted">Вкажіть дату для всього ряду. Порожні поля можна пропустити.</p>
           <label class="meter-date">Дата зняття показників<input type="date" name="date" required></label>
           <table class="garage-table meter-table"><caption>Показники, кВт·год</caption>
-          <thead><tr><th scope="col">Гараж</th><th scope="col">Попередній</th><th scope="col">Новий</th></tr></thead>
+          <thead><tr><th scope="col">Гараж</th><th scope="col">Було</th><th scope="col">Новий</th></tr></thead>
           <tbody>${fields.join("")}</tbody></table>
           <div class="garage-form-actions"><button type="submit">Зберегти показники</button><button type="button" data-cancel-readings>Скасувати</button></div>
           <p data-reading-error role="alert"></p>
@@ -102,6 +102,9 @@ export function renderElectricity(host, data, openRow, garageHref, setOpenRow, e
       const form = body.querySelector("form");
       form.elements.date.focus();
       const error = form.querySelector("[data-reading-error]");
+      form.addEventListener("input", () => {
+        error.textContent = "";
+      });
       form.querySelector("[data-cancel-readings]").addEventListener("click", () => {
         showReadings();
         body.querySelector("[data-edit-readings]")?.focus();

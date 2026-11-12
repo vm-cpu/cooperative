@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
+test.use({ locale: "uk-UA" });
+
 test("saves a row together, restores its position and updates garage history on a phone", async ({
   page,
 }) => {
