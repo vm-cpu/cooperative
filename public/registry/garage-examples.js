@@ -5,9 +5,11 @@ export const garageExamples = new Map([
     {
       phone: "+380 00 000 01 01",
       address: "вул. Умовна, 12",
-      tenants: [
-        { name: "Зразковий Андрій Ігорович", phone: "+380 00 000 02 01", since: "2026-09-01" },
-      ],
+      tenant: {
+        name: "Зразковий Андрій Ігорович",
+        phone: "+380 00 000 02 01",
+        since: "2026-09-01",
+      },
       paidThrough: "2027-03",
       debt: 0,
       entry: { date: "2023-05-12", amount: 150000 },
@@ -27,7 +29,6 @@ export const garageExamples = new Map([
     {
       phone: "+380 00 000 01 01",
       address: "вул. Умовна, 12",
-      tenants: [],
       paidThrough: "2026-08",
       debt: 30000,
       entry: { date: "2024-01-17", amount: 150000 },
@@ -44,10 +45,7 @@ export const garageExamples = new Map([
     {
       phone: "+380 00 000 01 02",
       address: "пров. Прикладний, 7",
-      tenants: [
-        { name: "Умовний Павло Сергійович", phone: "+380 00 000 02 02", since: "2026-04-01" },
-        { name: "Зразкова Ірина Олегівна", phone: "+380 00 000 02 03", since: "2026-08-15" },
-      ],
+      tenant: { name: "Зразкова Ірина Олегівна", phone: "+380 00 000 02 03", since: "2026-08-15" },
       paidThrough: "2026-11",
       debt: 0,
       entry: { date: "2021-06-18", amount: 100000 },
@@ -64,7 +62,6 @@ export const garageExamples = new Map([
     {
       phone: "+380 00 000 01 07",
       address: "вул. Демонстраційна, 4",
-      tenants: [],
       paidThrough: "2026-09",
       debt: 20000,
       entry: { date: "2020-03-21", amount: 100000 },
@@ -78,7 +75,6 @@ export const garageExamples = new Map([
     {
       phone: "+380 00 000 01 08",
       address: "вул. Зразкова, 3",
-      tenants: [],
       paidThrough: "2026-12",
       debt: 0,
       entry: { date: "2025-09-15", amount: 150000 },

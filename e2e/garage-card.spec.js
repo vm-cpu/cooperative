@@ -9,7 +9,7 @@ test("five garages have complete examples and basic cards accept contributions a
   for (const id of garageExamples.keys()) {
     await page.goto(`/#garage/${id}`);
     await expect(page.locator(".garage-category > summary")).toHaveText([
-      "Власник і орендарі",
+      "Власник і орендар",
       "Внески",
       "Електрика",
       "Квитанції",
@@ -18,7 +18,7 @@ test("five garages have complete examples and basic cards accept contributions a
   await page.goto("/#garage/garage-04");
   await expect(page.getByRole("heading", { name: "Про гараж" })).toBeVisible();
   const categories = page.locator(".garage-category > summary");
-  await expect(categories).toHaveText(["Внески", "Електрика"]);
+  await expect(categories).toHaveText(["Власник і орендар", "Внески", "Електрика"]);
   await categories.filter({ hasText: "Електрика" }).click();
   await expect(page.getByText("Показників лічильника ще немає.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Внести показники" })).toBeVisible();
@@ -35,7 +35,7 @@ test("mobile card tables, receipt and local contribution payment", async ({ page
   const card = page.locator("#garage-example");
   await expect(card.getByText("березень 2027 р.", { exact: true })).toBeVisible();
   await expect(card.locator("table").first()).toBeHidden();
-  for (const name of ["Власник і орендарі", "Внески", "Електрика", "Квитанції"]) {
+  for (const name of ["Власник і орендар", "Внески", "Електрика", "Квитанції"]) {
     await card.locator(".garage-category > summary").filter({ hasText: name }).click();
   }
   await card.getByText("Відкрити квитанцію №Е-001", { exact: true }).click();
@@ -70,7 +70,7 @@ test("mobile card tables, receipt and local contribution payment", async ({ page
   await expect(card.getByRole("table", { name: "Історія членських внесків" })).toContainText(
     "123,45",
   );
-  for (const name of ["Власник і орендарі", "Електрика", "Квитанції"]) {
+  for (const name of ["Власник і орендар", "Електрика", "Квитанції"]) {
     await card.locator(".garage-category > summary").filter({ hasText: name }).click();
   }
   await page.screenshot({ path: "test-results/garage-card-phone.png", fullPage: true });
