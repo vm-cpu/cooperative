@@ -10,7 +10,10 @@ test.beforeAll(async () => {
 });
 
 async function saveSingleReading(screen, checkInvalid = false) {
-  await screen.getByText("Ряд 1", { exact: true }).click();
+  await screen
+    .locator("#electricity-rows summary")
+    .filter({ hasText: /^Ряд 1$/ })
+    .click();
   await screen.getByRole("button", { name: "Внести показники" }).click();
   await screen.getByLabel("Дата зняття показників").pressSequentially("12.11.2026");
   const reading = screen.getByLabel("Новий показник гаража 1-01", { exact: true });
@@ -66,6 +69,7 @@ test("the downloadable HTML shares readings between a row and garage card", asyn
   await page.goto(pathToFileURL(file).href);
   await expect(page.getByRole("heading", { name: "Гаражі", exact: true })).toBeVisible();
   await page.getByRole("navigation").getByRole("link", { name: "Електрика", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Електрика", exact: true })).toBeVisible();
   await saveSingleReading(page);
   await page.reload();
   await saveFromGarageCard(page, true);
