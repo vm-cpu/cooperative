@@ -7,6 +7,17 @@ export const normalize = (value) =>
     .toLocaleLowerCase("uk");
 const compare = new Intl.Collator("uk", { numeric: true, sensitivity: "base" }).compare;
 export const garageLabel = (g) => `${g.row || "?"}-${g.number || "?"}`;
+export function isConfirmedGarage(garage, issues) {
+  return Boolean(
+    garage.row &&
+    garage.number &&
+    garage.type !== "technical" &&
+    !issues.some(
+      ({ kind, garageIds }) =>
+        (kind === "duplicate" || kind === "ambiguous") && garageIds.includes(garage.id),
+    ),
+  );
+}
 export function prepareData(source) {
   if (
     source.kind !== "fictional" ||

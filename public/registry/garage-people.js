@@ -21,18 +21,20 @@ export function prepareGaragePeople(data) {
   }
 }
 
-function updateGaragePerson(data, garage, role, person, since) {
-  // People stay in the directory. Only this garage's selected role changes.
-  if (role === "owner") {
-    if (person && !data.ownerById.has(person.id)) {
-      data.owners.push(person);
-      data.ownerById.set(person.id, person);
-    }
-    garage.ownerId = person?.id ?? null;
-    garage.ownerSince = since;
-  } else {
-    garage.tenant = person ? { person, since } : null;
+export function createGaragePerson(data, fields) {
+  const person = { ...fields, id: `demo-person-${data.people.size + 1}` };
+  data.people.set(person.id, person);
+  return person;
+}
+
+export function setGarageOwner(data, garage, person, since) {
+  if (person && !data.ownerById.has(person.id)) {
+    data.owners.push(person);
+    data.ownerById.set(person.id, person);
   }
+  // People stay in the directory when a garage changes owners.
+  garage.ownerId = person?.id ?? null;
+  garage.ownerSince = since;
 }
 
 const roles = {
@@ -72,7 +74,8 @@ export function renderGaragePeople(host, data, garage, ownerHref, escape, onChan
     }
 
     function save(person, since, message) {
-      updateGaragePerson(data, garage, role, person, since);
+      if (role === "owner") setGarageOwner(data, garage, person, since);
+      else garage.tenant = person ? { person, since } : null;
       showPerson(message, true);
       onChange();
     }
@@ -128,13 +131,10 @@ export function renderGaragePeople(host, data, garage, ownerHref, escape, onChan
             name.focus();
             return;
           }
-          const id = `demo-person-${data.people.size + 1}`;
-          person = {
-            id,
+          person = createGaragePerson(data, {
             name: name.value.trim(),
             phone: content.querySelector("[name=phone]").value.trim(),
-          };
-          data.people.set(id, person);
+          });
         }
         if (!person) {
           status.textContent = "Виберіть людину або додайте нову.";
