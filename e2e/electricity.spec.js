@@ -20,11 +20,24 @@ test("saves a row together, restores its position and updates garage history on 
 
   await row.getByRole("button", { name: "Внести показники" }).click();
   const date = row.getByLabel("Дата зняття показників");
-  await date.fill("2026-11-12");
   await row.getByLabel("Новий показник гаража 1-01", { exact: true }).fill("1272");
   const second = row.getByLabel("Новий показник гаража 1-2", { exact: true });
   await second.fill("500");
   const save = row.getByRole("button", { name: "Зберегти показники" });
+  await save.click();
+  await expect(row.getByRole("alert")).toContainText("Вкажіть дату зняття показників");
+  await expect(date).toHaveAttribute("aria-invalid", "true");
+  await expect(date).toBeFocused();
+
+  await date.pressSequentially("31.02.2026");
+  await save.click();
+  await expect(row.getByRole("alert")).toContainText("Введіть дійсну дату");
+  await expect(date).toBeFocused();
+
+  await date.fill("");
+  await date.pressSequentially("12.11.2026");
+  await expect(date).toHaveValue("12.11.2026");
+  await expect(date).not.toHaveAttribute("aria-invalid", "true");
   await save.click();
   await expect(row.getByRole("alert")).toContainText("новий показник менший");
   await expect(second).toBeFocused();
@@ -61,7 +74,7 @@ test("saves a row together, restores its position and updates garage history on 
   await page.reload();
   await expect(overview.getByRole("row", { name: /1-01/ })).toContainText("12.11.2026");
   await row.getByRole("button", { name: "Внести показники" }).click();
-  await date.fill("2026-11-12");
+  await date.fill("12.11.2026");
   await row.getByLabel("Новий показник гаража 1-01", { exact: true }).fill("1273");
   await save.click();
   await expect(row.getByRole("alert")).toContainText("виберіть дату після 12.11.2026");

@@ -10,6 +10,13 @@ import {
 
 const formatReading = new Intl.NumberFormat("uk-UA");
 
+function parseReadingDate(text) {
+  const parts = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(text.trim());
+  if (!parts) return "";
+  const [, day, month, year] = parts;
+  return `${year}-${month}-${day}`;
+}
+
 export function meterHistoryTable(garageId, escape) {
   const { entries, available } = garageMeterHistory(garageId);
   const warning = available
@@ -91,8 +98,10 @@ export function renderElectricity(host, data, openRow, garageHref, setOpenRow, e
       });
       body.innerHTML = `
         <form aria-label="Показники ряду ${escape(row)}">
-          <p class="muted">Вкажіть дату для всього ряду. Порожні поля можна пропустити.</p>
-          <label class="meter-date">Дата зняття показників<input type="date" name="date" required></label>
+          <p class="muted">Вкажіть одну дату для всього ряду у форматі ДД.ММ.РРРР. Порожні показники можна пропустити.</p>
+          <label class="meter-date">Дата зняття показників
+            <input type="text" name="date" placeholder="12.11.2026" aria-required="true" autocomplete="off">
+          </label>
           <table class="garage-table meter-table"><caption>Показники, кВт·год</caption>
           <thead><tr><th scope="col">Гараж</th><th scope="col">Було</th><th scope="col">Новий</th></tr></thead>
           <tbody>${fields.join("")}</tbody></table>
@@ -100,10 +109,12 @@ export function renderElectricity(host, data, openRow, garageHref, setOpenRow, e
           <p data-reading-error role="alert"></p>
         </form>`;
       const form = body.querySelector("form");
-      form.elements.date.focus();
+      const dateInput = form.elements.date;
+      dateInput.focus();
       const error = form.querySelector("[data-reading-error]");
       form.addEventListener("input", () => {
         error.textContent = "";
+        dateInput.removeAttribute("aria-invalid");
       });
       form.querySelector("[data-cancel-readings]").addEventListener("click", () => {
         showReadings();
@@ -112,10 +123,14 @@ export function renderElectricity(host, data, openRow, garageHref, setOpenRow, e
       form.addEventListener("submit", (event) => {
         event.preventDefault();
         const values = new FormData(form);
-        const date = values.get("date");
+        const dateText = dateInput.value.trim();
+        const date = parseReadingDate(dateText);
         if (!isReadingDate(date)) {
-          error.textContent = "Вкажіть коректну дату зняття показників.";
-          form.elements.date.focus();
+          error.textContent = dateText
+            ? "Введіть дійсну дату у форматі ДД.ММ.РРРР, наприклад 12.11.2026."
+            : "Вкажіть дату зняття показників, наприклад 12.11.2026.";
+          dateInput.setAttribute("aria-invalid", "true");
+          dateInput.focus({ preventScroll: true });
           return;
         }
 
