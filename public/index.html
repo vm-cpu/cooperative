@@ -26,21 +26,24 @@
       <strong>Вигадані дані · Демонстраційний режим</strong>
     </div>
     <div class="layout">
-      <nav class="navigation" aria-label="Розділи довідника">
-        <p class="nav-caption">Довідник</p>
-        <a href="#garages" data-view="garages"><span aria-hidden="true">▤</span>Гаражі</a>
-        <a href="#owners" data-view="owners"><span aria-hidden="true">♧</span>Власники</a>
-        <a href="#rows" data-view="rows"><span aria-hidden="true">▦</span>Ряди</a>
-        <a href="#contributions" data-view="contributions"
-          ><span aria-hidden="true">₴</span>Внески</a
-        >
-        <a href="#electricity" data-view="electricity"
-          ><span aria-hidden="true">ϟ</span>Електрика</a
-        >
-        <a href="#receipts" data-view="receipts"><span aria-hidden="true">▤</span>Квитанції</a>
-        <a href="#quality" data-view="quality"><span aria-hidden="true">☑</span>Якість даних</a>
-        <p class="nav-note">Карта доступна в розділі «Гаражі».</p>
-      </nav>
+      <aside class="directory-panel">
+        <nav class="navigation" aria-label="Розділи довідника">
+          <p class="nav-caption">Довідник</p>
+          <a href="#garages" data-view="garages"><span aria-hidden="true">▤</span>Гаражі</a>
+          <a href="#owners" data-view="owners"><span aria-hidden="true">♧</span>Власники</a>
+          <a href="#rows" data-view="rows"><span aria-hidden="true">▦</span>Ряди</a>
+          <a href="#contributions" data-view="contributions"
+            ><span aria-hidden="true">₴</span>Внески</a
+          >
+          <a href="#electricity" data-view="electricity"
+            ><span aria-hidden="true">ϟ</span>Електрика</a
+          >
+          <a href="#receipts" data-view="receipts"><span aria-hidden="true">▤</span>Квитанції</a>
+          <a href="#quality" data-view="quality"><span aria-hidden="true">☑</span>Якість даних</a>
+          <p class="nav-note">Карта доступна в розділі «Гаражі».</p>
+        </nav>
+        <div id="directory-search" hidden></div>
+      </aside>
       <main id="main" tabindex="-1">
         <div id="connection" class="notice" role="status" hidden>
           Немає інтернету. Уже завантажені вигадані дані можна переглядати. Для оновлення потрібне

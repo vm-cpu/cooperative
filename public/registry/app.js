@@ -32,6 +32,12 @@ import {
 } from "./model.js";
 const screen = document.querySelector("#screen");
 const main = document.querySelector("#main");
+const directory = document.querySelector(".directory-panel");
+const searchHost = directory.querySelector("#directory-search");
+const pageStyle = document.documentElement.style;
+new ResizeObserver(() => {
+  pageStyle.setProperty("--directory-height", `${directory.offsetHeight}px`);
+}).observe(directory);
 const announcer = document.querySelector("#announcer");
 const views = {
   garages: "Гаражі",
@@ -128,6 +134,31 @@ function ownerResults(filters) {
       : empty()
   }`;
 }
+function renderSearch({ name, label, value, placeholder }) {
+  searchHost.hidden = false;
+  searchHost.innerHTML = `<form role="search" aria-label="${escape(name)}">
+    <label for="search">${escape(label)}</label>
+    <input id="search" type="search" autocomplete="off" value="${escape(value)}" placeholder="${escape(placeholder)}">
+  </form>`;
+  return searchHost.querySelector("input");
+}
+
+function bindSearch(input, results, update) {
+  function search() {
+    update();
+    const top = results.getBoundingClientRect().top;
+    const scrollPadding =
+      parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+    if (top < scrollPadding || top >= window.innerHeight)
+      results.scrollIntoView({ block: "start" });
+  }
+  input.addEventListener("input", search);
+  input.form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    search();
+  });
+}
+
 function listPage(view, params) {
   const filters = readFilters(params);
   const garages = view === "garages";
@@ -136,13 +167,7 @@ function listPage(view, params) {
     ? `<div class="view-switch" role="group" aria-label="Вигляд гаражів"><a class="button ${mapMode ? "quiet" : ""}" href="${escape(url("garages", { ...filters, mode: "list" }))}" ${!mapMode ? 'aria-current="true"' : ""}>Список</a><a class="button ${mapMode ? "" : "quiet"}" href="${escape(url("garages", { ...filters, mode: "map" }))}" ${mapMode ? 'aria-current="true"' : ""}>Карта</a></div>`
     : "";
   const showMap = (values) =>
-    renderMap(
-      document.querySelector("#results"),
-      data,
-      values,
-      filterGarages(data, values),
-      detailUrl,
-    );
+    renderMap(results, data, values, filterGarages(data, values), detailUrl);
   screen.innerHTML =
     title(
       views[view],
@@ -153,26 +178,34 @@ function listPage(view, params) {
     ) +
     modes +
     (garages ? "" : '<div id="owner-editor"></div>') +
-    `<form class="filters" id="filters" role="search" aria-label="Пошук ${garages ? "гаражів" : "власників"}"><div class="fields"><label for="search">${garages ? "Номер гаража або ім’я людини" : "Ім’я власника"}<input id="search" name="q" type="search" autocomplete="off" value="${escape(filters.q)}" placeholder="${garages ? "Наприклад, 1-01" : "Наприклад, Тестова"}" aria-describedby="search-hint" /><span id="search-hint" class="hint">${garages ? "Можна ввести частину номера або імені." : "Однакові імена можуть належати різним людям."}</span></label>${
-      garages
-        ? `<div><label for="row">Ряд</label><select id="row" name="row"><option value="">Усі ряди</option>${rowSummary(
-            data,
-          )
-            .map(
-              (r) =>
-                `<option value="${escape(r.row)}" ${r.row === filters.row ? "selected" : ""}>Ряд ${escape(r.row)}</option>`,
+    `<form class="filters" id="filters" aria-label="Фільтри ${garages ? "гаражів" : "власників"}">
+      ${
+        garages
+          ? `<div class="row-filter"><label for="row">Ряд</label><select id="row" name="row"><option value="">Усі ряди</option>${rowSummary(
+              data,
             )
-            .join("")}</select></div>`
-        : ""
-    }</div>
+              .map(
+                (r) =>
+                  `<option value="${escape(r.row)}" ${r.row === filters.row ? "selected" : ""}>Ряд ${escape(r.row)}</option>`,
+              )
+              .join("")}</select></div>`
+          : ""
+      }
     <div class="filter-bottom">${garages ? `<label class="check"><input type="checkbox" name="missing" ${filters.missing ? "checked" : ""}/>Без власника</label><label class="check"><input type="checkbox" name="technical" ${filters.technical ? "checked" : ""}/>Технічні бокси</label>` : `<label class="check"><input type="checkbox" name="multiple" ${filters.multiple ? "checked" : ""}/>Кілька гаражів</label>`}<button type="button" data-reset>Скинути фільтри</button></div></form>
     ${filters.issue ? `<p class="notice">Перевірка: ${escape(issueLabels[filters.issue] || "невідома категорія")}. Щоб бачити всі гаражі, скиньте фільтри.</p>` : ""}<section id="results" aria-label="Результати пошуку">${mapMode ? "" : garages ? garageResults(filters) : ownerResults(filters)}</section>`;
+  const results = screen.querySelector("#results");
+  const form = screen.querySelector("#filters");
+  const search = renderSearch({
+    name: garages ? "Пошук гаражів" : "Пошук власників",
+    label: garages ? "Номер гаража або ім’я людини" : "Ім’я власника",
+    value: filters.q,
+    placeholder: garages ? "Наприклад, 1-01" : "Наприклад, Тестова",
+  });
   if (mapMode) showMap(filters);
-  const form = document.querySelector("#filters");
   const update = () => {
     const values = new FormData(form);
     const next = {
-      q: values.get("q"),
+      q: search.value,
       row: values.get("row"),
       missing: values.has("missing"),
       technical: values.has("technical"),
@@ -183,10 +216,7 @@ function listPage(view, params) {
     history.replaceState(null, "", url(view, next));
     activeUrl = location.href;
     if (mapMode) showMap(next);
-    else
-      document.querySelector("#results").innerHTML = garages
-        ? garageResults(next)
-        : ownerResults(next);
+    else results.innerHTML = garages ? garageResults(next) : ownerResults(next);
     document.querySelectorAll(".view-switch a").forEach((link) => {
       const mode = new URLSearchParams(link.hash.split("?")[1]).get("mode");
       link.href = url("garages", { ...next, mode });
@@ -198,15 +228,12 @@ function listPage(view, params) {
     );
   };
   form.addEventListener("input", update);
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    update();
-  });
+  bindSearch(search, results, update);
   if (!garages) {
     const editor = screen.querySelector("#owner-editor");
     renderOwnerEditor(editor, data, escape, (owner) => {
       if (!filterOwners(data, readFilters(route().params)).includes(owner)) {
-        form.elements.q.value = owner.name;
+        search.value = owner.name;
         form.elements.multiple.checked = false;
       }
       screen.querySelector(".heading .total").textContent = `${data.owners.length} власників`;
@@ -271,13 +298,13 @@ function billingPage(view, params) {
     title(
       views[view],
       receipts ? "Квитанції за гаражами." : "Членські та вступні внески по гаражах.",
-    ) +
-    `<section class="panel">
-      <label class="meter-date">Гараж або власник
-        <input type="search" value="${escape(params.get("q") || "")}">
-      </label><div data-billing-results></div>
-    </section>`;
-  const search = screen.querySelector("input[type=search]");
+    ) + '<section class="panel" data-billing-results></section>';
+  const search = renderSearch({
+    name: receipts ? "Пошук квитанцій" : "Пошук внесків",
+    label: "Гараж або власник",
+    value: params.get("q") || "",
+    placeholder: "Наприклад, 1-01",
+  });
   const results = screen.querySelector("[data-billing-results]");
   const update = () => {
     if (receipts) {
@@ -298,7 +325,7 @@ function billingPage(view, params) {
       );
     }
   };
-  search.addEventListener("input", () => {
+  bindSearch(search, results, () => {
     history.replaceState(null, "", url(view, { q: search.value }));
     activeUrl = location.href;
     update();
@@ -386,6 +413,8 @@ function missingPage() {
 function render(focus = true) {
   if (!data) return;
   const { view, id, params } = route();
+  searchHost.hidden = true;
+  searchHost.replaceChildren();
   document.querySelectorAll("[data-view]").forEach((link) => {
     if (
       link.dataset.view === view ||
