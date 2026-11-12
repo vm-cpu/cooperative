@@ -8,7 +8,7 @@ export function garageCategory(name, body) {
 export const garageElectricitySection = () =>
   garageCategory(
     "Електрика",
-    "<div data-garage-meter></div><div data-garage-electricity-payments></div>",
+    "<div data-electricity-meter-info></div><div data-garage-meter></div><div data-garage-electricity-payments></div>",
   );
 
 export const garageReceiptsSection = () =>
@@ -22,6 +22,7 @@ export function renderGarageExample(host, garage, owner, escape) {
       <dl><dt>Оплачено до кінця місяця</dt><dd>${escape(periodLabel(example.paidThrough))}</dd>
       <dt>Борг за внесками</dt><dd>${example.debt ? escape(money(example.debt)) : "Немає"}</dd></dl>
     </section>
+    <section class="panel detail-section" data-meter-details></section>
     <div class="garage-categories">
       ${garageCategory("Власник і орендар", "<div data-garage-people></div>")}
       ${garageCategory("Внески", "<div data-garage-contributions></div>")}

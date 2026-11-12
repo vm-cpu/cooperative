@@ -10,8 +10,12 @@ import {
   garageReceiptsSection,
   renderGarageExample,
 } from "./garage-card.js";
-import { renderGarageElectricityPayments, renderGarageReceipts } from "./garage-billing.js";
-import { renderPaymentEditor } from "./payment-editor.js";
+import {
+  renderGarageElectricityPayments,
+  renderGarageReceipts,
+  renderReceiptResults,
+} from "./garage-billing.js";
+import { meterDetailsList, readMeterDetails, renderMeterDetailsEditor } from "./meter-details.js";
 import { prepareGaragePeople, renderGaragePeople } from "./garage-people.js";
 import { renderMap } from "./map.js";
 import { renderOwnerEditor } from "./owner-editor.js";
@@ -35,6 +39,7 @@ const views = {
   rows: "Ряди",
   electricity: "Електрика",
   contributions: "Внески",
+  receipts: "Квитанції",
   quality: "Якість даних",
 };
 let data;
@@ -70,15 +75,17 @@ function readFilters(params) {
     issue: params.get("issue") || "",
   };
 }
-function detailUrl(view, id) {
+function detailUrl(view, id, params = {}) {
   const r = route();
   const origin = ["garage", "owner"].includes(r.view)
     ? r.params.get("from") || "#garages"
     : location.hash || "#garages";
-  return url(`${view}/${encodeURIComponent(id)}`, { from: origin });
+  return url(`${view}/${encodeURIComponent(id)}`, { from: origin, ...params });
 }
 function safeOrigin(value) {
-  return /^#(garages|owners|rows|electricity|contributions|quality)(\?|$)/.test(value || "")
+  return /^#(garages|owners|rows|electricity|contributions|receipts|quality)(\?|$)/.test(
+    value || "",
+  )
     ? value
     : "#garages";
 }
@@ -237,13 +244,8 @@ function backLink(params) {
   const map =
     origin.startsWith("#garages?") &&
     new URLSearchParams(origin.split("?")[1]).get("mode") === "map";
-  const destination = origin.startsWith("#electricity")
-    ? "ряду"
-    : origin.startsWith("#contributions")
-      ? "внесків"
-      : map
-        ? "карти"
-        : "списку";
+  const destinations = { electricity: "ряду", contributions: "внесків", receipts: "квитанцій" };
+  const destination = destinations[origin.slice(1).split("?")[0]] ?? (map ? "карти" : "списку");
   return `<a class="back" data-back href="${escape(origin)}">← Повернутися до ${destination}</a>`;
 }
 function electricityPage(params) {
@@ -263,33 +265,42 @@ function electricityPage(params) {
     escape,
   );
 }
-function contributionsPage(params) {
+function billingPage(view, params) {
+  const receipts = view === "receipts";
   screen.innerHTML =
-    title("Внески", "Членські та вступні внески по гаражах.") +
-    `<section class="panel"><div id="contribution-editor"></div>
+    title(
+      views[view],
+      receipts ? "Квитанції за гаражами." : "Членські та вступні внески по гаражах.",
+    ) +
+    `<section class="panel">
       <label class="meter-date">Гараж або власник
-        <input id="contribution-search" type="search" value="${escape(params.get("q") || "")}">
-      </label><div id="contribution-results"></div>
+        <input type="search" value="${escape(params.get("q") || "")}">
+      </label><div data-billing-results></div>
     </section>`;
-  const search = screen.querySelector("#contribution-search");
-  const results = screen.querySelector("#contribution-results");
+  const search = screen.querySelector("input[type=search]");
+  const results = screen.querySelector("[data-billing-results]");
   const update = () => {
-    renderContributionResults(results, data, search.value, (id) => detailUrl("garage", id), escape);
-  };
-  function updateSearch() {
-    history.replaceState(null, "", url("contributions", { q: search.value }));
-    activeUrl = location.href;
-    update();
-  }
-  search.addEventListener("input", updateSearch);
-  const issues = qualityIssues(data);
-  const garages = filterGarages(data).filter((garage) => isConfirmedGarage(garage, issues));
-  renderPaymentEditor(screen.querySelector("#contribution-editor"), { garages }, escape, (id) => {
-    if (!filterGarages(data, { q: search.value }).some((garage) => garage.id === id)) {
-      search.value = "";
-      updateSearch();
-      return;
+    if (receipts) {
+      renderReceiptResults(
+        results,
+        data,
+        search.value,
+        (id, receipt) => detailUrl("garage", id, { receipt }),
+        escape,
+      );
+    } else {
+      renderContributionResults(
+        results,
+        data,
+        search.value,
+        (id) => detailUrl("garage", id),
+        escape,
+      );
     }
+  };
+  search.addEventListener("input", () => {
+    history.replaceState(null, "", url(view, { q: search.value }));
+    activeUrl = location.href;
     update();
   });
   update();
@@ -317,11 +328,24 @@ function garagePage(id, params) {
     const contributions = screen.querySelector("[data-garage-contributions]");
     const electricityPayments = screen.querySelector("[data-garage-electricity-payments]");
     const receipts = screen.querySelector("[data-garage-receipts]");
+    const meterInfo = screen.querySelector("[data-electricity-meter-info]");
+    const updateMeterInfo = (details) => {
+      if (meterInfo) meterInfo.innerHTML = meterDetailsList(details, escape);
+    };
+    updateMeterInfo(readMeterDetails(id));
+    renderMeterDetailsEditor(
+      screen.querySelector("[data-meter-details]"),
+      id,
+      escape,
+      updateMeterInfo,
+    );
+    function updatePayments() {
+      if (contributions) renderGarageContributions(contributions, id, escape);
+      if (electricityPayments) renderGarageElectricityPayments(electricityPayments, g, escape);
+    }
     if (meter) renderGarageMeterReadings(meter, g, escape, canEditReadings);
-    if (contributions) renderGarageContributions(contributions, id, escape, canEditReadings);
-    if (electricityPayments)
-      renderGarageElectricityPayments(electricityPayments, g, escape, canEditReadings);
-    if (receipts) renderGarageReceipts(receipts, g, escape, canEditReadings);
+    updatePayments();
+    if (receipts) renderGarageReceipts(receipts, g, escape, canEditReadings, updatePayments);
   }
   if (garageExamples.has(id)) {
     screen.innerHTML = `<div class="details">${backLink(params)}${title(`Гараж ${label(g)}`, "Картка гаража · Вигадані дані")}<div id="garage-example"></div></div>`;
@@ -336,6 +360,7 @@ function garagePage(id, params) {
   const electricity =
     canEditReadings || garageMeterHistory(id).entries.length ? garageElectricitySection() : "";
   screen.innerHTML = `<div class="details">${backLink(params)}${title(`Гараж ${label(g)}`, "Картка гаража · Вигадані дані")}<section class="panel"><h2>Про гараж</h2><dl><dt>Ряд</dt><dd>${escape(g.row || "Не вказано")}</dd><dt>Номер боксу</dt><dd>${escape(g.number || "Не вказано")}</dd><dt>Тип</dt><dd>${g.type === "technical" ? "Технічний бокс" : "Гараж"}</dd><dt>ID запису</dt><dd>${escape(g.id)}</dd></dl></section>
+    <section class="panel detail-section" data-meter-details></section>
     <div class="garage-categories">
       ${garageCategory("Власник і орендар", "<div data-garage-people></div>")}
       ${issues.length ? `<section class="notice"><h2>Потрібно перевірити</h2><ul>${issues.map((i) => `<li>${escape(issueLabels[i.kind])}</li>`).join("")}</ul></section>` : ""}
@@ -373,7 +398,7 @@ function render(focus = true) {
   if (["garages", "owners"].includes(view)) listPage(view, params);
   else if (view === "rows") rowsPage();
   else if (view === "electricity") electricityPage(params);
-  else if (view === "contributions") contributionsPage(params);
+  else if (view === "contributions" || view === "receipts") billingPage(view, params);
   else if (view === "quality") qualityPage();
   else if (view === "garage") garagePage(id, params);
   else if (view === "owner") ownerPage(id, params);
@@ -391,6 +416,19 @@ function render(focus = true) {
     } else {
       main.focus({ preventScroll: true });
       window.scrollTo(0, 0);
+    }
+  }
+  const receipt = params.get("receipt");
+  if (view === "garage" && receipt) {
+    const target = [...screen.querySelectorAll("[data-receipt]")].find(
+      (el) => el.dataset.receipt === receipt,
+    );
+    if (target) {
+      target.closest(".garage-category").open = true;
+      target.open = true;
+      const summary = target.querySelector("summary");
+      summary.focus({ preventScroll: true });
+      summary.scrollIntoView({ block: "center" });
     }
   }
 }

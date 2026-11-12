@@ -1,11 +1,10 @@
 import { garageExamples } from "./garage-examples.js";
 import { formatCalendarDate } from "./dates.js";
 import { filterGarages, garageLabel } from "./model.js";
-import { garageEntryHistory, money, periodLabel, tableAmount } from "./payment-data.js";
-import { renderPaymentEditor } from "./payment-editor.js";
+import { garagePaymentHistory, money, periodLabel, tableAmount } from "./payment-data.js";
 
 function contributionHistory(id) {
-  return garageEntryHistory("contributions", id, garageExamples.get(id)?.contributions ?? []);
+  return garagePaymentHistory("contributions", id);
 }
 
 function cardTable(entries, escape) {
@@ -23,22 +22,13 @@ function cardTable(entries, escape) {
       .join("")}</tbody></table>`;
 }
 
-export function renderGarageContributions(host, id, escape, canEdit) {
+export function renderGarageContributions(host, id, escape) {
   const history = contributionHistory(id);
   const entry = garageExamples.get(id)?.entry;
   host.innerHTML = `
     ${entry ? `<p><strong>Вступний внесок.</strong> Сплачено ${escape(money(entry.amount))} · ${escape(formatCalendarDate(entry.date))}</p>` : ""}
-    <div data-payment-editor></div>
     ${history.available ? "" : '<p role="status">Збережені оплати недоступні в цьому браузері.</p>'}
     <div data-contributions>${cardTable(history.entries, escape)}</div>`;
-  if (canEdit && history.available) {
-    renderPaymentEditor(host.querySelector("[data-payment-editor]"), { id }, escape, () => {
-      host.querySelector("[data-contributions]").innerHTML = cardTable(
-        contributionHistory(id).entries,
-        escape,
-      );
-    });
-  }
 }
 
 export function renderContributionResults(host, data, query, garageHref, escape) {
