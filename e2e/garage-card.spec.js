@@ -42,8 +42,9 @@ test("mobile card tables, receipt and local contribution payment", async ({ page
   await expect(card.locator(".garage-receipts details[open]")).toContainText(
     "Демонстраційна квитанція",
   );
-  await card.getByText("Додати тестову оплату", { exact: true }).click();
-  const form = card.getByRole("form", { name: "Тестова оплата членського внеску" });
+  await card.getByText("Створити квитанцію", { exact: true }).click();
+  const form = card.getByRole("form", { name: "Нова квитанція" });
+  await form.getByLabel("За що", { exact: true }).selectOption("contributions");
   await form.getByLabel("Дата оплати").fill("10.11.2026");
   await form.getByLabel("Сума, грн").fill("123.45");
   await form.getByLabel("За період").fill("04.2027");
@@ -52,8 +53,8 @@ test("mobile card tables, receipt and local contribution payment", async ({ page
     .toBeLessThanOrEqual(375);
   const accessibility = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
   expect(accessibility.violations).toEqual([]);
-  await form.getByRole("button", { name: "Зберегти оплату" }).click();
-  await expect(card.getByRole("status").filter({ hasText: "збережено в історії" })).toBeVisible();
+  await form.getByRole("button", { name: "Зберегти квитанцію" }).click();
+  await expect(card.getByRole("status").filter({ hasText: "Квитанцію збережено" })).toBeVisible();
   await expect(card.getByRole("table", { name: "Історія членських внесків" })).toContainText(
     "123,45",
   );

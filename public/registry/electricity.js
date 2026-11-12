@@ -1,3 +1,4 @@
+import { readMeterDetails } from "./meter-details.js";
 import { formatCalendarDate, parseCalendarDate } from "./dates.js";
 import { electricityCharge, tariffHistory } from "./electricity-tariffs.js";
 import { periodLabel, tableAmount } from "./payment-data.js";
@@ -210,7 +211,12 @@ export function renderElectricity(host, data, openRow, garageHref, setOpenRow, e
       }
       const tableRows = garages.map((g) => {
         const latest = meterHistory(g.id, saved)[0];
-        return `<tr><th scope="row">${link(g)}</th><td>${latest ? escape(formatReading.format(latest.value)) : "—"}</td>
+        const meter = readMeterDetails(g.id);
+        const numbers = [
+          meter?.meterNumber && `Лічильник №${escape(meter.meterNumber)}`,
+          meter?.sealNumber && `Пломба №${escape(meter.sealNumber)}`,
+        ].filter(Boolean);
+        return `<tr><th scope="row">${link(g)}${numbers.map((value) => `<small class="meter-row-id">${value}</small>`).join("")}</th><td>${latest ? escape(formatReading.format(latest.value)) : "—"}</td>
           <td class="garage-table-value">${latest ? escape(formatCalendarDate(latest.date)) : "—"}</td></tr>`;
       });
       body.innerHTML = `

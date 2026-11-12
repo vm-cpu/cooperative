@@ -1,4 +1,5 @@
 import { isCalendarDate } from "./dates.js";
+import { garageExamples } from "./garage-examples.js";
 
 const currency = new Intl.NumberFormat("uk-UA", { style: "currency", currency: "UAH" });
 const month = new Intl.DateTimeFormat("uk-UA", { month: "long", year: "numeric", timeZone: "UTC" });
@@ -62,7 +63,7 @@ function storedEntries(kind, id) {
   });
 }
 
-export function garageEntryHistory(kind, id, examples) {
+function garageEntryHistory(kind, id, examples = []) {
   try {
     const saved = storedEntries(kind, id);
     return {
@@ -77,11 +78,31 @@ export function garageEntryHistory(kind, id, examples) {
   }
 }
 
-export function saveGarageEntry(kind, id, entry) {
-  const entries = storedEntries(kind, id);
-  const record =
-    kind === "receipts"
-      ? { ...entry, receipt: `ДЕМО-${String(entries.length + 1).padStart(3, "0")}` }
-      : entry;
-  localStorage.setItem(storageKey(kind, id), JSON.stringify([...entries, record]));
+export function garageReceiptHistory(id) {
+  const example = garageExamples.get(id);
+  const examples = Object.keys(receiptPurposes).flatMap((purpose) =>
+    (example?.[purpose] ?? []).map((item) => ({ ...item, purpose })),
+  );
+  return garageEntryHistory("receipts", id, examples);
+}
+
+export function garagePaymentHistory(purpose, id) {
+  const receipts = garageReceiptHistory(id);
+  const legacy = garageEntryHistory(purpose, id);
+  return {
+    available: receipts.available && legacy.available,
+    entries: [
+      ...receipts.entries.filter((item) => item.purpose === purpose),
+      ...legacy.entries,
+    ].sort((a, b) => b.date.localeCompare(a.date)),
+  };
+}
+
+export function saveGarageReceipt(id, entry) {
+  const entries = storedEntries("receipts", id);
+  const receipt = `ДЕМО-${String(entries.length + 1).padStart(3, "0")}`;
+  localStorage.setItem(
+    storageKey("receipts", id),
+    JSON.stringify([...entries, { ...entry, receipt }]),
+  );
 }

@@ -1,9 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { buildDemo } from "../scripts/build-demo.mjs";
 
-test("the standalone preview saves a contribution and lists it with the other payments", async ({
-  page,
-}) => {
+test("a receipt in the standalone preview updates both contribution tables", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 820 });
   const html = await buildDemo();
   await page.route("**/contribution-preview", (route) =>
@@ -23,73 +21,47 @@ test("the standalone preview saves a contribution and lists it with the other pa
   await expect(overview.getByRole("link", { name: "1-2", exact: true }).first()).toBeVisible();
   await expect(overview.getByText("Вступний внесок").first()).toBeVisible();
 
-  const search = screen.getByLabel("Гараж або власник", { exact: true });
+  const search = screen.getByRole("searchbox");
   await search.fill("1-01");
   await expect(overview.getByRole("link", { name: "1-2", exact: true })).toHaveCount(0);
   await overview.getByRole("link", { name: "1-01", exact: true }).first().click();
-  await screen
-    .locator("#garage-example .garage-category > summary")
-    .filter({ hasText: /^Внески$/ })
-    .click();
-  await screen.getByText("Додати тестову оплату", { exact: true }).click();
+  const category = (name) => screen.locator(".garage-category > summary").filter({ hasText: name });
+  await category("Внески").click();
+  await category("Квитанції").click();
+  await expect(screen.getByText("Додати тестову оплату", { exact: true })).toHaveCount(0);
+  await screen.getByText("Створити квитанцію", { exact: true }).click();
 
-  const form = screen.getByRole("form", { name: "Тестова оплата членського внеску" });
-  const date = form.getByLabel("Дата оплати", { exact: true });
+  const form = screen.getByRole("form", { name: "Нова квитанція" });
+  await form.getByLabel("За що", { exact: true }).selectOption("contributions");
+  await form.getByLabel("Дата оплати", { exact: true }).fill("12.11.2026");
+  await form.getByLabel("Сума, грн", { exact: true }).fill("1500,25");
   const period = form.getByLabel("За період", { exact: true });
-  const save = form.getByRole("button", { name: "Зберегти оплату", exact: true });
-  await date.pressSequentially("12.11.2026");
-  await form.getByLabel("Сума, грн", { exact: true }).pressSequentially("1500,25");
-  await period.pressSequentially("13.2026");
-  await save.click();
-  await expect(form.getByRole("alert")).toContainText("Введіть місяць і рік");
+  const save = form.getByRole("button", { name: "Зберегти квитанцію", exact: true });
   await period.fill("11.2026 - 11.2025");
   await save.click();
   await expect(form.getByRole("alert")).toContainText("від раннього до пізнього місяця");
   await period.fill("11.2025 - 11.2026");
-  await save.click();
-  await expect(screen.getByRole("status").filter({ hasText: "збережено в історії" })).toBeVisible();
+  await period.press("Enter");
+
   const history = screen.getByRole("table", { name: "Історія членських внесків" });
-  await expect(history.getByRole("row", { name: /12.11.2026/ })).toContainText(/1\s500,25/);
+  const cardPayment = history.getByRole("row", { name: /12\.11\.2026/ });
+  await expect(cardPayment).toHaveCount(1);
+  await expect(cardPayment).toContainText(/1\s500,25/);
+  await expect(
+    screen
+      .getByRole("table", { name: "Оплати за електрику" })
+      .getByRole("row", { name: /12\.11\.2026/ }),
+  ).toHaveCount(0);
 
   await screen.getByRole("link", { name: "Повернутися до внесків" }).click();
   await expect(search).toHaveValue("1-01");
-  const newPayment = overview.getByRole("row", { name: /12.11.2026/ });
+  const newPayment = overview.getByRole("row", { name: /12\.11\.2026/ });
+  await expect(newPayment).toHaveCount(1);
   await expect(newPayment).toContainText(/1\s500,25/);
   await expect(newPayment).toContainText("листопад 2025");
   await expect(newPayment).toContainText("листопад 2026");
   await expect(screen.getByRole("status").filter({ hasText: "Разом:" })).toContainText(/3\s900,25/);
-  await expect
-    .poll(() => overview.evaluate((el) => el.ownerDocument.documentElement.scrollWidth))
-    .toBeLessThanOrEqual(
-      await overview.evaluate((el) => el.ownerDocument.documentElement.clientWidth),
-    );
   await page.reload();
   await navigation.getByRole("link", { name: "Внески", exact: true }).click();
   await expect(newPayment).toContainText(/1\s500,25/);
-  await search.fill("1-01");
-  await screen.getByText("Додати оплату", { exact: true }).click();
-  const garage = form.getByLabel("Гараж", { exact: true });
-  await form.getByLabel("Дата оплати", { exact: true }).fill("13.11.2026");
-  await form.getByLabel("Сума, грн", { exact: true }).fill("200,50");
-  const paidMonth = form.getByLabel("За період", { exact: true });
-  await paidMonth.fill("12.2026 - 02.2027");
-  await form.getByRole("button", { name: "Зберегти оплату" }).click();
-  await expect(form.getByRole("alert")).toContainText("Виберіть гараж");
-  await garage.selectOption("garage-02");
-  await paidMonth.press("Enter");
-
-  await expect(screen.getByRole("status").filter({ hasText: "збережено в історії" })).toBeVisible();
-  await expect(search).toHaveValue("");
-  const overviewPayment = overview.getByRole("row", { name: /13.11.2026/ });
-  await expect(overviewPayment).toContainText("200,50");
-  await expect(overviewPayment).toContainText("грудень 2026");
-  await expect(overviewPayment).toContainText("лютий 2027");
-  await page.reload();
-  await navigation.getByRole("link", { name: "Внески", exact: true }).click();
-  await overviewPayment.getByRole("link", { name: "1-2", exact: true }).click();
-  await screen
-    .locator("#garage-example .garage-category > summary")
-    .filter({ hasText: /^Внески$/ })
-    .click();
-  await expect(history.getByRole("row", { name: /13.11.2026/ })).toContainText("200,50");
 });

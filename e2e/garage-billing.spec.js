@@ -38,16 +38,18 @@ test("demo calculates monthly electricity charges and saves garage payments and 
   await expect(november).toContainText("листопад 2026");
   await expect(november.getByRole("cell").last()).toHaveText("100,00");
 
-  await page.getByText("Внести оплату", { exact: true }).click();
-  const payment = page.getByRole("form", { name: "Оплата за електрику" });
-  await payment.getByLabel("Дата оплати").fill("02.12.2026");
-  await payment.getByLabel("Сума, грн").fill("172,00");
-  await payment.getByLabel("За період").fill("10.2026 - 11.2026");
-  await payment.getByRole("button", { name: "Зберегти оплату" }).click();
   const payments = page.getByRole("table", { name: "Оплати за електрику" });
   const recorded = payments.getByRole("row", { name: /02\.12\.2026/ });
-  await expect(recorded).toContainText("172,00");
-  await expect(recorded).toContainText("жовтень 2026 р. – листопад 2026 р.");
+  await expect(recorded).toHaveCount(0);
+  await expect(page.getByText("Внести оплату", { exact: true })).toHaveCount(0);
+
+  await page.getByText("Редагувати дані лічильника", { exact: true }).click();
+  const meterForm = page.getByRole("form", { name: "Дані лічильника" });
+  await meterForm.getByLabel("Номер лічильника", { exact: true }).fill("00123-М");
+  await meterForm.getByLabel("Номер пломби лічильника").fill("007-П");
+  await meterForm.getByRole("button", { name: "Зберегти дані лічильника" }).click();
+  await expect(page.locator("[data-electricity-meter-info]")).toContainText("00123-М");
+  await expect(page.locator("[data-electricity-meter-info]")).toContainText("007-П");
 
   await category("Квитанції").click();
   await page.getByText("Відкрити квитанцію №Е-001").click();
@@ -65,16 +67,36 @@ test("demo calculates monthly electricity charges and saves garage payments and 
   await expect(receipts.getByRole("columnheader", { name: "За що" })).toBeVisible();
   await expect(receipts.getByRole("row", { name: /ДЕМО-001/ })).toContainText("Електрика");
 
+  await expect(recorded).toHaveCount(1);
+  await expect(recorded).toContainText("172,00");
+  await expect(recorded).toContainText("жовтень 2026 р. – листопад 2026 р.");
+  const navigation = page.getByRole("navigation");
+  await navigation.getByRole("link", { name: "Квитанції", exact: true }).click();
+  const overview = page.getByRole("table", { name: "Загальна таблиця квитанцій" });
+  await page.getByRole("searchbox").fill("1-01");
+  const link = overview.getByRole("link", { name: "Відкрити квитанцію №ДЕМО-001 гаража 1-01" });
+  await link.click();
+  await expect(page.getByText("Відкрити квитанцію №ДЕМО-001", { exact: true })).toBeFocused();
   await page.reload();
-  await category("Квитанції").click();
-  await page.getByText("Відкрити квитанцію №ДЕМО-001").click();
   const newReceipt = page.locator(".garage-receipts details[open]");
+  await expect(newReceipt).toContainText("00123-М");
+  await expect(newReceipt).toContainText("007-П");
+  await expect(page.locator("[data-meter-details-list]")).toContainText("00123-М");
   await expect(newReceipt).toContainText("жовтень 2026 р. – листопад 2026 р.");
   await expect(newReceipt.getByRole("button", { name: "Надрукувати" })).toBeDisabled();
   await category("Електрика").click();
   await expect(recorded).toHaveCount(1);
   await expect(november.getByRole("cell").last()).toHaveText("100,00");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+
+  await page.getByRole("link", { name: "Повернутися до квитанцій" }).click();
+  await expect(page.getByRole("searchbox")).toHaveValue("1-01");
+  await page.goto("/billing-demo#electricity?row=1");
+  const row = page
+    .getByRole("table", { name: "Останні показники" })
+    .getByRole("row", { name: /1-01/ });
+  await expect(row).toContainText("00123-М");
+  await expect(row).toContainText("007-П");
 
   await page.goto("/billing-demo#garage/garage-02");
   await category("Електрика").click();
