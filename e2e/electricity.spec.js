@@ -55,7 +55,7 @@ test("saves a row together, restores its position and updates garage history on 
   await page.screenshot({ path: "test-results/electricity-entry-phone.png", fullPage: true });
   await save.click();
   await expect(row.getByRole("status")).toContainText("Збережено показників: 2");
-  await expect(overview.getByRole("row", { name: /1-2/ })).toContainText("593");
+  await expect(overview.getByRole("row", { name: /^1-2\b/ })).toContainText("593");
   await expect(overview.getByRole("row", { name: /1-10/ })).toContainText("02.11.2026");
 
   await row.getByRole("link", { name: "1-01", exact: true }).click();
