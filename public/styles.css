@@ -1052,7 +1052,7 @@ label {
 .map-entrance {
   pointer-events: none;
 }
-.map-slots a:focus-visible,
+.map-slots a:focus,
 .map-row-buttons a:focus-visible {
   outline: 3px solid #004b75;
 }

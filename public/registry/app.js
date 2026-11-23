@@ -190,9 +190,17 @@ function cellUrl(cell) {
   return garage ? detailUrl("garage", garage.id) : detailUrl("place", cell.id);
 }
 
+function showInRowLink(cell) {
+  if (!cell) return "";
+  const pages = rowParts(cell.row);
+  const part = pages.findIndex((page) => page.some((lane) => lane.includes(cell))) + 1;
+  const href = url("garages", { mode: "map", section: cell.row, part, slot: cell.id });
+  return `<a class="button quiet" href="${escape(href)}">Показати в ряду</a>`;
+}
 function mapRowPage(params, pages, page) {
   const row = params.get("section");
-  const linkTo = (index) => url("garages", { ...Object.fromEntries(params), part: index + 1 });
+  const linkTo = (index) =>
+    url("garages", { ...Object.fromEntries(params), slot: null, part: index + 1 });
   const lanes = pages[page]
     .map(
       (lane) =>
@@ -204,7 +212,7 @@ function mapRowPage(params, pages, page) {
           .join("")}</div>`,
     )
     .join('<p class="muted">Інша сторона ряду</p>');
-  return `<a class="back" href="${escape(url("garages", { ...Object.fromEntries(params), section: null, part: null }))}">До карти</a>
+  return `<a class="back" href="${escape(url("garages", { ...Object.fromEntries(params), section: null, part: null, slot: null }))}">До карти</a>
     <h2>Ряд ${row} · Частина ${page + 1} із ${pages.length}</h2>
     ${row === "4" ? "<p>Умовний ряд. Розташування та номери орієнтовні.</p>" : ""}
     ${lanes}<div class="map-controls">${page > 0 ? `<a class="button quiet" href="${escape(linkTo(page - 1))}">Попередня</a>` : ""}
@@ -446,8 +454,20 @@ function garagePage(id, params) {
     updatePayments();
     if (receipts) renderGarageReceipts(receipts, g, escape, canEditReadings, updatePayments);
   }
+  const cell = planCells.find(
+    (c) => c.row === g.row && c.number !== null && findRegistryGarage(data, c)?.id === g.id,
+  );
+  const header =
+    backLink(params) +
+    title(
+      `Гараж ${label(g)}`,
+      g.provisional
+        ? "Умовний ряд · Номер і розташування орієнтовні"
+        : "Картка гаража · Вигадані дані",
+    ) +
+    showInRowLink(cell);
   if (garageExamples.has(id)) {
-    screen.innerHTML = `<div class="details">${backLink(params)}${title(`Гараж ${label(g)}`, g.provisional ? "Умовний ряд · Номер і розташування орієнтовні" : "Картка гаража · Вигадані дані")}<div id="garage-example"></div></div>`;
+    screen.innerHTML = `<div class="details">${header}<div id="garage-example"></div></div>`;
     renderGarageExample(screen.querySelector("#garage-example"), g, owner, escape);
     mountGarageSections();
     return;
@@ -458,7 +478,7 @@ function garagePage(id, params) {
     : "";
   const electricity =
     canEditReadings || garageMeterHistory(id).entries.length ? garageElectricitySection() : "";
-  screen.innerHTML = `<div class="details">${backLink(params)}${title(`Гараж ${label(g)}`, g.provisional ? "Умовний ряд · Номер і розташування орієнтовні" : "Картка гаража · Вигадані дані")}<section class="panel"><h2>Про гараж</h2><dl><dt>Ряд</dt><dd>${escape(g.row || "Не вказано")}</dd><dt>Номер боксу</dt><dd>${escape(g.number || "Не вказано")}</dd><dt>Тип</dt><dd>${g.type === "technical" ? "Технічний бокс" : "Гараж"}</dd><dt>ID запису</dt><dd>${escape(g.id)}</dd></dl></section>
+  screen.innerHTML = `<div class="details">${header}<section class="panel"><h2>Про гараж</h2><dl><dt>Ряд</dt><dd>${escape(g.row || "Не вказано")}</dd><dt>Номер боксу</dt><dd>${escape(g.number || "Не вказано")}</dd><dt>Тип</dt><dd>${g.type === "technical" ? "Технічний бокс" : "Гараж"}</dd><dt>ID запису</dt><dd>${escape(g.id)}</dd></dl></section>
     <section class="panel detail-section" data-meter-details></section>
     <div class="garage-categories">
       ${garageCategory("Власник і орендар", "<div data-garage-people></div>")}
@@ -509,7 +529,8 @@ function render(focus = true) {
         title(
           cell.number === null ? "Номер уточнюється" : "Гараж " + planLabel(cell),
           `Ряд ${cell.row} · Місце ${cell.id}. Потрібно звірити з реєстром.`,
-        );
+        ) +
+        showInRowLink(cell);
     else missingPage();
   } else if (view === "garage") garagePage(id, params);
   else if (view === "owner") ownerPage(id, params);
@@ -524,6 +545,12 @@ function render(focus = true) {
       );
       (target || main).focus({ preventScroll: true });
       window.scrollTo(0, saved.y);
+    } else if (view === "garages" && params.has("slot") && params.has("section")) {
+      const cellLink = [...screen.querySelectorAll(".map-slots [data-record]")].find(
+        (link) => link.dataset.record === params.get("slot"),
+      );
+      (cellLink || main).focus();
+      cellLink?.scrollIntoView({ block: "center" });
     } else {
       main.focus({ preventScroll: true });
       window.scrollTo(0, 0);
