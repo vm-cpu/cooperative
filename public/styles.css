@@ -1029,3 +1029,51 @@ label {
     white-space: nowrap;
   }
 }
+
+.map-row-buttons,
+.map-slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+  max-width: 40rem;
+}
+.map-slots .button {
+  min-height: 70px;
+  font-size: 1.15rem;
+}
+.map-selector {
+  margin-block: 1rem;
+}
+.map-cell.provisional polygon {
+  fill: #cfdaed;
+}
+.map-row,
+.map-landmark,
+.map-entrance {
+  pointer-events: none;
+}
+.map-slots a:focus-visible,
+.map-row-buttons a:focus-visible {
+  outline: 3px solid #004b75;
+}
+.map-cell.selected polygon {
+  stroke: #004b75;
+  stroke-width: 4;
+}
+
+.map-overview .map-cell text {
+  opacity: 0;
+}
+.map-layout {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+}
+@media (min-width: 1100px) {
+  .map-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(12rem, 0.45fr);
+  }
+  .map-layout .map-selector {
+    margin: 0;
+  }
+}

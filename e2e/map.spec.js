@@ -13,10 +13,6 @@ test("map and list retain query, uniquely matched garage opens and returns to ma
   const cameraBefore = await world.getAttribute("transform");
   const cell = page.getByRole("button", { name: "Гараж 1-1", exact: true });
   await cell.click();
-  await page
-    .locator(".map-selection")
-    .getByRole("link", { name: "Відкрити картку гаража" })
-    .click();
   await expect(page.locator("h1")).toHaveText("Гараж 1-01");
   await page.getByRole("link", { name: "Повернутися до карти" }).click();
   await expect(world).toHaveAttribute("transform", cameraBefore);
@@ -46,8 +42,8 @@ test("rotation keeps labels level, reset faces entrance, unknowns have no invent
   const unknown = page.locator(".map-cell.uncertain").first();
   await unknown.focus();
   await page.keyboard.press("Enter");
-  await expect(page.locator(".map-selection")).toContainText("Номер уточнюється");
-  await expect(page.locator(".map-selection a")).toHaveCount(0);
+  await expect(page.locator("h1")).toHaveText("Номер уточнюється");
+  await page.getByRole("link", { name: "Повернутися до карти" }).click();
   await expect(page.locator(".map-landmark text").filter({ hasText: /^Яма$/ })).toHaveCount(4);
   await page.locator(".map-cell").first().focus();
   await page.keyboard.press("ArrowRight");
@@ -151,4 +147,27 @@ test("map zoom and rotation preserve a searched garage at the center; drag and r
   expect(after.y - before.y).toBeCloseTo(30, 0);
   await page.getByRole("button", { name: "Початковий вигляд", exact: true }).click();
   await expect(page.locator(".map-cell text").first()).toHaveAttribute("transform", /^rotate\(0 /);
+});
+
+test("a row page opens the shared garage card and restores its part", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 820 });
+  await page.goto("/#garages?mode=map");
+  await page.getByRole("link", { name: "Ряд 4", exact: true }).click();
+  await page.getByRole("link", { name: "Наступна" }).click();
+  const slot = page.getByRole("link", { name: "Гараж 4-45", exact: true });
+  await slot.click();
+  await expect(page.locator("h1")).toHaveText("Гараж 4-45");
+  await expect(page.locator("summary").filter({ hasText: "Квитанції" })).toBeVisible();
+  await page.getByRole("link", { name: "Повернутися до ряду" }).click();
+  await expect(page.getByRole("heading", { name: /Ряд 4 · Частина 2/ })).toBeVisible();
+  await expect(slot).toBeFocused();
+  expect(
+    (await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations,
+  ).toEqual([]);
+  await page.getByRole("link", { name: "До карти" }).click();
+  await page.getByRole("searchbox").fill("Прикладенко");
+  await page.getByRole("link", { name: "Гараж 1-10", exact: true }).click();
+  await expect(page.locator("h1")).toHaveText("Гараж 1-10");
+  await page.getByRole("link", { name: "Повернутися до карти" }).click();
+  await expect(page.getByRole("searchbox")).toHaveValue("Прикладенко");
 });
