@@ -1,20 +1,20 @@
-const theme = document.querySelector("#theme");
-function applyTheme(value) {
-  if (value === "system") delete document.documentElement.dataset.theme;
-  else document.documentElement.dataset.theme = value;
+const button = document.querySelector("#text-size");
+function applySize(large) {
+  document.documentElement.classList.toggle("large-text", large);
+  button.setAttribute("aria-pressed", String(large));
+  button.textContent = large ? "Звичайний текст" : "Збільшити текст";
 }
 try {
-  const saved = localStorage.getItem("cooperative-theme");
-  if (["light", "dark", "system"].includes(saved)) theme.value = saved;
+  applySize(localStorage.getItem("cooperative-large-text") === "true");
 } catch {
-  /* Browsing with storage disabled still supports theme changes. */
+  applySize(false);
 }
-applyTheme(theme.value);
-theme.addEventListener("change", () => {
-  applyTheme(theme.value);
+button.addEventListener("click", () => {
+  const large = button.getAttribute("aria-pressed") !== "true";
+  applySize(large);
   try {
-    localStorage.setItem("cooperative-theme", theme.value);
+    localStorage.setItem("cooperative-large-text", String(large));
   } catch {
-    /* Optional preference storage. */
+    /* Optional preference only; no registry data is stored. */
   }
 });

@@ -1,0 +1,291 @@
+{
+  "kind": "fictional",
+  "version": 1,
+  "owners": [
+    {
+      "id": "owner-01",
+      "source": {
+        "name": "Тестова Олена Андріївна"
+      }
+    },
+    {
+      "id": "owner-02",
+      "source": {
+        "name": "Прикладенко Микола Тестович"
+      }
+    },
+    {
+      "id": "owner-03",
+      "source": {
+        "name": "Демонстраційна Катерина Олександрівна з дуже довгим вигаданим ім’ям"
+      }
+    },
+    {
+      "id": "owner-04",
+      "source": {
+        "name": "Тестовий Олексій Іванович"
+      }
+    },
+    {
+      "id": "owner-05",
+      "source": {
+        "name": "Тестовий Олексій Іванович"
+      }
+    },
+    {
+      "id": "owner-06",
+      "source": {
+        "name": "Умовна Марія Петрівна"
+      }
+    },
+    {
+      "id": "owner-07",
+      "source": {
+        "name": "Вигаданий Петро Степанович"
+      }
+    },
+    {
+      "id": "owner-08",
+      "source": {
+        "name": "Навчальна Ганна Василівна"
+      }
+    }
+  ],
+  "garages": [
+    {
+      "id": "garage-01",
+      "source": {
+        "row": "1",
+        "number": "01"
+      },
+      "ownerId": "owner-01",
+      "type": "garage"
+    },
+    {
+      "id": "garage-02",
+      "source": {
+        "row": "1",
+        "number": "2"
+      },
+      "ownerId": "owner-01",
+      "type": "garage"
+    },
+    {
+      "id": "garage-03",
+      "source": {
+        "row": "1",
+        "number": "10"
+      },
+      "ownerId": "owner-02",
+      "type": "garage"
+    },
+    {
+      "id": "garage-04",
+      "source": {
+        "row": "1",
+        "number": "11"
+      },
+      "ownerId": null,
+      "type": "garage"
+    },
+    {
+      "id": "garage-05",
+      "source": {
+        "row": "2",
+        "number": "1"
+      },
+      "ownerId": "owner-03",
+      "type": "garage"
+    },
+    {
+      "id": "garage-06",
+      "source": {
+        "row": "2",
+        "number": "2А"
+      },
+      "ownerId": "owner-04",
+      "type": "garage"
+    },
+    {
+      "id": "garage-07",
+      "source": {
+        "row": "2",
+        "number": "2Б"
+      },
+      "ownerId": "owner-05",
+      "type": "garage"
+    },
+    {
+      "id": "garage-08",
+      "source": {
+        "row": "2",
+        "number": "12/1"
+      },
+      "ownerId": "owner-06",
+      "type": "garage"
+    },
+    {
+      "id": "garage-09",
+      "source": {
+        "row": "2",
+        "number": "12/2"
+      },
+      "ownerId": null,
+      "type": "garage"
+    },
+    {
+      "id": "garage-10",
+      "source": {
+        "row": "3",
+        "number": "1"
+      },
+      "ownerId": "owner-07",
+      "type": "garage"
+    },
+    {
+      "id": "garage-11",
+      "source": {
+        "row": "3",
+        "number": "2"
+      },
+      "ownerId": "owner-08",
+      "type": "garage"
+    },
+    {
+      "id": "garage-12",
+      "source": {
+        "row": "3",
+        "number": "3"
+      },
+      "ownerId": null,
+      "type": "technical"
+    },
+    {
+      "id": "garage-13",
+      "source": {
+        "row": "5",
+        "number": "1"
+      },
+      "ownerId": "owner-01",
+      "type": "garage"
+    },
+    {
+      "id": "garage-14",
+      "source": {
+        "row": "5",
+        "number": "2"
+      },
+      "ownerId": "owner-02",
+      "type": "garage"
+    },
+    {
+      "id": "garage-15",
+      "source": {
+        "row": "6",
+        "number": "1"
+      },
+      "ownerId": "owner-03",
+      "type": "garage"
+    },
+    {
+      "id": "garage-16",
+      "source": {
+        "row": "6",
+        "number": "2"
+      },
+      "ownerId": "owner-06",
+      "type": "garage"
+    },
+    {
+      "id": "garage-17",
+      "source": {
+        "row": "7",
+        "number": "1"
+      },
+      "ownerId": "owner-07",
+      "type": "garage"
+    },
+    {
+      "id": "garage-18",
+      "source": {
+        "row": "8",
+        "number": "1"
+      },
+      "ownerId": "owner-08",
+      "type": "garage"
+    },
+    {
+      "id": "garage-19",
+      "source": {
+        "row": "9",
+        "number": "1"
+      },
+      "ownerId": null,
+      "type": "technical"
+    },
+    {
+      "id": "garage-20",
+      "source": {
+        "row": "9",
+        "number": "2"
+      },
+      "ownerId": "owner-01",
+      "type": "garage"
+    },
+    {
+      "id": "garage-21",
+      "source": {
+        "row": "10",
+        "number": "1"
+      },
+      "ownerId": "owner-02",
+      "type": "garage"
+    },
+    {
+      "id": "garage-22",
+      "source": {
+        "row": "10",
+        "number": "2"
+      },
+      "ownerId": "owner-03",
+      "type": "garage"
+    },
+    {
+      "id": "garage-23",
+      "source": {
+        "row": "2",
+        "number": "2А"
+      },
+      "ownerId": "owner-06",
+      "type": "garage"
+    },
+    {
+      "id": "garage-24",
+      "source": {
+        "row": "",
+        "number": "5"
+      },
+      "ownerId": null,
+      "type": "garage"
+    },
+    {
+      "id": "garage-25",
+      "source": {
+        "row": "5",
+        "number": ""
+      },
+      "ownerId": "owner-07",
+      "type": "garage"
+    },
+    {
+      "id": "garage-26",
+      "source": {
+        "row": "6",
+        "number": "7 або 8"
+      },
+      "ownerId": "owner-08",
+      "type": "garage",
+      "needsNumberReview": true
+    }
+  ]
+}

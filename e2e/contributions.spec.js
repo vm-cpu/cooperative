@@ -1,0 +1,67 @@
+import { test, expect } from "@playwright/test";
+import { buildDemo } from "../scripts/build-demo.mjs";
+
+test("a receipt in the standalone preview updates both contribution tables", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 820 });
+  const html = await buildDemo();
+  await page.route("**/contribution-preview", (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: '<iframe title="Демо" style="width:100%;height:100vh;border:0" src="/contribution-demo" sandbox="allow-scripts allow-same-origin"></iframe>',
+    }),
+  );
+  await page.route("**/contribution-demo", (route) =>
+    route.fulfill({ contentType: "text/html", body: html }),
+  );
+  await page.goto("/contribution-preview");
+  const screen = page.frameLocator("iframe");
+  const navigation = screen.getByRole("navigation");
+  await navigation.getByRole("link", { name: "Внески", exact: true }).click();
+  const overview = screen.getByRole("table", { name: "Загальна таблиця внесків" });
+  await expect(overview.getByRole("link", { name: "1-2", exact: true }).first()).toBeVisible();
+  await expect(overview.getByText("Вступний внесок").first()).toBeVisible();
+
+  const search = screen.getByRole("searchbox");
+  await search.fill("1-01");
+  await expect(overview.getByRole("link", { name: "1-2", exact: true })).toHaveCount(0);
+  await overview.getByRole("link", { name: "1-01", exact: true }).first().click();
+  const category = (name) => screen.locator(".garage-category > summary").filter({ hasText: name });
+  await category("Внески").click();
+  await category("Квитанції").click();
+  await expect(screen.getByText("Додати тестову оплату", { exact: true })).toHaveCount(0);
+  await screen.getByText("Створити квитанцію", { exact: true }).click();
+
+  const form = screen.getByRole("form", { name: "Нова квитанція" });
+  await form.getByLabel("За що", { exact: true }).selectOption("contributions");
+  await form.getByLabel("Дата оплати", { exact: true }).fill("12.11.2026");
+  await form.getByLabel("Сума, грн", { exact: true }).fill("1500,25");
+  const period = form.getByLabel("За період", { exact: true });
+  const save = form.getByRole("button", { name: "Зберегти квитанцію", exact: true });
+  await period.fill("11.2026 - 11.2025");
+  await save.click();
+  await expect(form.getByRole("alert")).toContainText("від раннього до пізнього місяця");
+  await period.fill("11.2025 - 11.2026");
+  await period.press("Enter");
+
+  const history = screen.getByRole("table", { name: "Історія членських внесків" });
+  const cardPayment = history.getByRole("row", { name: /12\.11\.2026/ });
+  await expect(cardPayment).toHaveCount(1);
+  await expect(cardPayment).toContainText(/1\s500,25/);
+  await expect(
+    screen
+      .getByRole("table", { name: "Оплати за світло" })
+      .getByRole("row", { name: /12\.11\.2026/ }),
+  ).toHaveCount(0);
+
+  await screen.getByRole("link", { name: "Повернутися до внесків" }).click();
+  await expect(search).toHaveValue("1-01");
+  const newPayment = overview.getByRole("row", { name: /12\.11\.2026/ });
+  await expect(newPayment).toHaveCount(1);
+  await expect(newPayment).toContainText(/1\s500,25/);
+  await expect(newPayment).toContainText("листопад 2025");
+  await expect(newPayment).toContainText("листопад 2026");
+  await expect(screen.getByRole("status").filter({ hasText: "Разом:" })).toContainText(/3\s900,25/);
+  await page.reload();
+  await navigation.getByRole("link", { name: "Внески", exact: true }).click();
+  await expect(newPayment).toContainText(/1\s500,25/);
+});

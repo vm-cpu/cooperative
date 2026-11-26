@@ -1,4 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
 import process from "node:process";
 const target = process.argv[2];
 if (!["staging", "production"].includes(target)) {
@@ -24,9 +26,11 @@ const checked = spawnSync("npm", ["run", "check"], {
   shell: process.platform === "win32",
 });
 if (checked.status !== 0) process.exit(checked.status ?? 1);
+const require = createRequire(import.meta.url);
+const wrangler = join(dirname(require.resolve("wrangler/package.json")), "bin", "wrangler.js");
 const deployed = spawnSync(
-  "npx",
-  ["wrangler", "deploy", "--env", target, "--message", `Release ${sha}`],
-  { stdio: "inherit", shell: process.platform === "win32" },
+  process.execPath,
+  [wrangler, "deploy", "--env", target, "--message", `Release ${sha}`],
+  { stdio: "inherit" },
 );
 process.exit(deployed.status ?? 1);
