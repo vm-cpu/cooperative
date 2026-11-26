@@ -1,0 +1,55 @@
+name: Deploy staging
+
+# Staging only. Production stays a manual, confirmed release (docs/ENVIRONMENTS.md).
+on:
+  push:
+    branches: [main]
+  # "Run workflow" button: deploy any branch to staging to check a PR before merging.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deploy at a time; a newer one waits instead of interrupting a running deploy.
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # The API token secret lives only in the GitHub "staging" environment.
+    environment:
+      name: staging
+      url: https://cooperative-staging.vm-55d.workers.dev
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install npm 11
+        run: npm install -g npm@11
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Runs npm run check first, then wrangler deploy --env staging.
+      - name: Check and deploy
+        run: npm run deploy:staging
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          WRANGLER_SEND_METRICS: "false"
+
+      # Staging must stay behind Cloudflare Access: an anonymous request must not get the page.
+      - name: Check that staging is still protected
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" https://cooperative-staging.vm-55d.workers.dev/api/health)
+          echo "Anonymous request status: $status"
+          if [ "$status" = "200" ]; then
+            echo "Staging answered without Cloudflare Access login. Check the Access policy." >&2
+            exit 1
+          fi
