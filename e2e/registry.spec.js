@@ -60,7 +60,9 @@ for (const target of ["list", "card"]) {
         page.locator("#main").evaluate((el) => {
           const top = el.getBoundingClientRect().top + window.scrollY;
           const maximum = document.documentElement.scrollHeight - window.innerHeight;
-          return Math.abs(window.scrollY - Math.min(top, maximum));
+          const padding =
+            parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+          return Math.abs(window.scrollY - Math.max(0, Math.min(top - padding, maximum)));
         }),
       )
       .toBeLessThan(2);

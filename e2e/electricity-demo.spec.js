@@ -38,6 +38,7 @@ async function saveSingleReading(screen, checkInvalid = false) {
 async function saveFromGarageCard(screen, withEnter) {
   await screen.getByRole("link", { name: "1-01", exact: true }).click();
   const electricity = screen.locator("#garage-example summary").filter({ hasText: /^Світло$/ });
+  await electricity.evaluate((summary) => summary.scrollIntoView({ block: "center" }));
   await electricity.click();
   const readings = screen.getByRole("table", { name: "Показники лічильника" });
   await expect(readings.getByRole("row", { name: /12.11.2026/ })).toContainText(/1\s272/);

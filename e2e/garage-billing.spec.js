@@ -73,7 +73,7 @@ test("demo calculates monthly electricity charges and saves garage payments and 
   const navigation = page.getByRole("navigation");
   await navigation.getByRole("link", { name: "Квитанції", exact: true }).click();
   const overview = page.getByRole("table", { name: "Загальна таблиця квитанцій" });
-  await page.getByRole("searchbox").fill("1-01");
+  await page.getByRole("searchbox", { name: "Гараж або власник" }).fill("1-01");
   const link = overview.getByRole("link", { name: "Відкрити квитанцію №ДЕМО-001 гаража 1-01" });
   await link.click();
   await expect(page.getByText("Відкрити квитанцію №ДЕМО-001", { exact: true })).toBeFocused();
@@ -90,7 +90,7 @@ test("demo calculates monthly electricity charges and saves garage payments and 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
 
   await page.getByRole("link", { name: "Повернутися до квитанцій" }).click();
-  await expect(page.getByRole("searchbox")).toHaveValue("1-01");
+  await expect(page.getByRole("searchbox", { name: "Гараж або власник" })).toHaveValue("1-01");
   await page.goto("/billing-demo#electricity?row=1");
   const row = page
     .getByRole("table", { name: "Останні показники" })
