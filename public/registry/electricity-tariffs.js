@@ -66,11 +66,11 @@ export function renderTariffEditor(host, escape) {
   }
   host.innerHTML = `
     <details class="garage-form">
-      <summary>Тарифи на електрику</summary>
+      <summary>Тарифи на світло</summary>
       <div class="garage-category-body">
         <p>Тариф спільний для всіх гаражів. Він діє з початку місяця, на який припадає дата зміни.</p>
         <div data-tariff-history></div>
-        <form aria-label="Тариф на електрику">
+        <form aria-label="Тариф на світло">
           <div class="garage-form-fields">
             <label>Дата зміни тарифу<input name="date" type="text" placeholder="15.11.2026" autocomplete="off" aria-required="true"></label>
             <label>Тариф, грн за кВт·год<input name="rate" type="text" inputmode="decimal" placeholder="5,00" autocomplete="off" aria-required="true"></label>

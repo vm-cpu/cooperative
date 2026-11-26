@@ -49,7 +49,7 @@ test("a receipt in the standalone preview updates both contribution tables", asy
   await expect(cardPayment).toContainText(/1\s500,25/);
   await expect(
     screen
-      .getByRole("table", { name: "Оплати за електрику" })
+      .getByRole("table", { name: "Оплати за світло" })
       .getByRole("row", { name: /12\.11\.2026/ }),
   ).toHaveCount(0);
 

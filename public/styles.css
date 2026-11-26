@@ -7,12 +7,12 @@
     sans-serif;
   font-size: 20px;
   line-height: 1.55;
-  color: #1d342d;
-  background: #f5f7f4;
+  color: #182230;
+  background: #f4f6f8;
   font-synthesis: none;
-  --green: #185342;
-  --line: #ccd7cf;
-  --muted: #506158;
+  --green: #174a7e;
+  --line: #cbd5df;
+  --muted: #435366;
 }
 * {
   box-sizing: border-box;
@@ -187,7 +187,7 @@ strong {
   max-height: 100dvh;
   min-width: 0;
   border-right: 1px solid var(--line);
-  background: #f5f7f4;
+  background: #f4f6f8;
 }
 .navigation {
   padding: 1.2rem 1rem 0.55rem;
@@ -343,12 +343,14 @@ main:focus {
   margin-top: 0.5rem;
 }
 .owner-unknown {
-  display: block;
-  width: 1.3rem;
-  height: 1.3rem;
+  display: inline-block;
+  padding: 0.35rem 0.65rem;
   background: #ffda66;
+  color: #422e05;
   border: 1px solid #84620a;
-  border-radius: 0.2rem;
+  border-radius: 0.3rem;
+  font-size: 1rem;
+  font-weight: 800;
 }
 .record-meta {
   font-size: 0.9rem;
@@ -803,8 +805,69 @@ label {
   font-weight: 700;
 }
 
-.garage-overview h2 {
-  margin-bottom: 0.5rem;
+.garage-overview,
+.garage-payment-overview {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.garage-overview p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.garage-overview .button {
+  margin-block: 0.25rem;
+}
+.garage-payment-overview .panel {
+  min-width: 0;
+}
+.garage-balance {
+  font-size: 1.2rem;
+  font-weight: 750;
+}
+@media (min-width: 761px) {
+  :root {
+    scroll-padding-top: var(--directory-height, 0px);
+  }
+  .layout:has(.directory-panel) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .directory-panel {
+    flex-direction: row;
+    align-items: center;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    background: white;
+  }
+  .directory-panel .navigation {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 0.3rem;
+    padding: 0.35rem 0.65rem;
+  }
+  .directory-panel .navigation a {
+    margin-bottom: 0;
+  }
+  .directory-panel .nav-note {
+    display: none;
+  }
+  #directory-search {
+    width: clamp(15rem, 30%, 23rem);
+    border: 0;
+    padding: 0.35rem 0.65rem;
+  }
+  .garage-payment-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.directory-search-submit {
+  display: flex;
+  gap: 0.35rem;
+}
+.directory-search-submit input {
+  min-width: 0;
 }
 
 .garage-categories {

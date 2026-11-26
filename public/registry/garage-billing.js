@@ -23,7 +23,7 @@ export function renderGarageElectricityPayments(host, garage, escape) {
     (available ? "" : '<p role="status">Частина збережених оплат недоступна.</p>') +
     (entries.length
       ? table(
-          "Оплати за електрику",
+          "Оплати за світло",
           ["Дата", "Сума, грн", "За період"],
           entries.map(({ date, amount, period }) => [
             formatCalendarDate(date),
@@ -32,7 +32,7 @@ export function renderGarageElectricityPayments(host, garage, escape) {
           ]),
           escape,
         )
-      : "<p>Оплат за електрику ще немає.</p>");
+      : "<p>Оплат за світло ще немає.</p>");
 }
 
 export function renderGarageReceipts(host, garage, escape, canEdit, onSave) {

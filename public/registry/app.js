@@ -2,20 +2,20 @@ import { formatCalendarDate } from "./dates.js";
 import { renderContributionResults, renderGarageContributions } from "./contributions.js";
 import { renderElectricity, renderGarageMeterReadings } from "./electricity.js";
 import { renderTariffEditor } from "./electricity-tariffs.js";
-import { garageMeterHistory } from "./meter-readings.js";
 import { garageExamples } from "./garage-examples.js";
 import {
   garageCategory,
   garageElectricitySection,
   garageReceiptsSection,
   renderGarageExample,
+  renderGarageOverview,
 } from "./garage-card.js";
 import {
   renderGarageElectricityPayments,
   renderGarageReceipts,
   renderReceiptResults,
 } from "./garage-billing.js";
-import { meterDetailsList, readMeterDetails, renderMeterDetailsEditor } from "./meter-details.js";
+import { renderMeterDetailsEditor } from "./meter-details.js";
 import { prepareGaragePeople, renderGaragePeople } from "./garage-people.js";
 import {
   planCells,
@@ -50,7 +50,7 @@ const views = {
   garages: "Гаражі",
   owners: "Власники",
   rows: "Ряди",
-  electricity: "Електрика",
+  electricity: "Світло",
   contributions: "Внески",
   receipts: "Квитанції",
   quality: "Якість даних",
@@ -115,7 +115,7 @@ function garageItem(g) {
   const owner = data.ownerById.get(g.ownerId);
   const ownerLine = owner
     ? `<p class="garage-owner">Власник: <strong>${escape(owner.name)}</strong></p>`
-    : '<span class="owner-unknown" role="img" aria-label="Без власника" title="Без власника"></span>';
+    : '<span class="owner-unknown">Без власника</span>';
   return `<li class="record"><div><a class="record-link" data-record="${escape(g.id)}" href="${escape(detailUrl("garage", g.id))}">Гараж ${label(g)}</a>${g.provisional ? '<span class="record-meta">Умовний ряд</span>' : ""}</div><div>${ownerLine}${g.tenant ? `<p class="record-meta garage-tenant">Орендар: ${escape(g.tenant.person.name)}</p>` : ""}${g.type === "technical" ? '<span class="status neutral">Технічний бокс</span>' : ""}${g.needsNumberReview ? '<span class="status">Уточнити номер</span>' : ""}</div><a class="button quiet" href="${escape(detailUrl("garage", g.id))}" aria-label="Відкрити картку гаража ${label(g)}">Відкрити картку</a></li>`;
 }
 function empty() {
@@ -163,11 +163,14 @@ function ownerResults(filters) {
       : empty()
   }`;
 }
-function renderSearch({ name, label, value, placeholder }) {
+function renderSearch({ name, label, value, placeholder, submit = false }) {
   searchHost.hidden = false;
   searchHost.innerHTML = `<form role="search" aria-label="${escape(name)}">
     <label for="search">${escape(label)}</label>
-    <input id="search" type="search" autocomplete="off" value="${escape(value)}" placeholder="${escape(placeholder)}">
+    <div class="${submit ? "directory-search-submit" : ""}">
+      <input id="search" type="search" autocomplete="off" value="${escape(value)}" placeholder="${escape(placeholder)}">
+      ${submit ? '<button type="submit">Знайти</button>' : ""}
+    </div>
   </form>`;
   return searchHost.querySelector("input");
 }
@@ -355,12 +358,12 @@ function backLink(params) {
   const section = map && new URLSearchParams(origin.split("?")[1]).has("section");
   const destination = section
     ? "ряду"
-    : (destinations[origin.slice(1).split("?")[0]] ?? (map ? "карти" : "списку"));
+    : (destinations[origin.slice(1).split("?")[0]] ?? (map ? "мапи" : "списку"));
   return `<a class="back" data-back href="${escape(origin)}">← Повернутися до ${destination}</a>`;
 }
 function electricityPage(params) {
   screen.innerHTML =
-    title("Електрика", "Відкрийте ряд, щоб переглянути або внести показники.") +
+    title("Світло", "Відкрийте ряд, щоб переглянути або внести показники.") +
     '<p class="muted">Тестові показники зберігаються в цьому браузері.</p><div id="electricity-tariffs"></div><div class="garage-categories" id="electricity-rows"></div>';
   renderTariffEditor(screen.querySelector("#electricity-tariffs"), escape);
   renderElectricity(
@@ -419,41 +422,42 @@ function billingPage(view, params) {
 function garagePage(id, params) {
   const g = data.garages.find((g) => g.id === id);
   if (!g) return missingPage();
-  const owner = data.ownerById.get(g.ownerId);
   const allIssues = qualityIssues(data);
   const canEditReadings = isConfirmedGarage(g, allIssues);
   function mountGarageSections() {
+    const overview = screen.querySelector("[data-garage-overview]");
+    function updateOverview() {
+      renderGarageOverview(overview, g, data.ownerById.get(g.ownerId), escape);
+    }
+    overview.addEventListener("click", (event) => {
+      const category = event.target.dataset.openGarageCategory;
+      if (!category) return;
+      const summary = [...screen.querySelectorAll(".garage-category > summary")].find(
+        (heading) => heading.textContent === category,
+      );
+      summary.parentElement.open = true;
+      summary.focus();
+      summary.scrollIntoView({ block: "start" });
+    });
     renderGaragePeople(
       screen.querySelector("[data-garage-people]"),
       data,
       g,
       (ownerId) => detailUrl("owner", ownerId),
       escape,
-      () => {
-        const name = screen.querySelector("[data-garage-owner-name]");
-        if (name) name.textContent = data.ownerById.get(g.ownerId)?.name ?? "Без власника";
-      },
+      updateOverview,
     );
     const meter = screen.querySelector("[data-garage-meter]");
     const contributions = screen.querySelector("[data-garage-contributions]");
     const electricityPayments = screen.querySelector("[data-garage-electricity-payments]");
     const receipts = screen.querySelector("[data-garage-receipts]");
-    const meterInfo = screen.querySelector("[data-electricity-meter-info]");
-    const updateMeterInfo = (details) => {
-      if (meterInfo) meterInfo.innerHTML = meterDetailsList(details, escape);
-    };
-    updateMeterInfo(readMeterDetails(id));
-    renderMeterDetailsEditor(
-      screen.querySelector("[data-meter-details]"),
-      id,
-      escape,
-      updateMeterInfo,
-    );
+    renderMeterDetailsEditor(screen.querySelector("[data-meter-details]"), id, escape);
     function updatePayments() {
       if (contributions) renderGarageContributions(contributions, id, escape);
       if (electricityPayments) renderGarageElectricityPayments(electricityPayments, g, escape);
+      updateOverview();
     }
-    if (meter) renderGarageMeterReadings(meter, g, escape, canEditReadings);
+    if (meter) renderGarageMeterReadings(meter, g, escape, canEditReadings, updateOverview);
     updatePayments();
     if (receipts) renderGarageReceipts(receipts, g, escape, canEditReadings, updatePayments);
   }
@@ -471,22 +475,16 @@ function garagePage(id, params) {
     showInRowLink(cell);
   if (garageExamples.has(id)) {
     screen.innerHTML = `<div class="details">${header}<div id="garage-example"></div></div>`;
-    renderGarageExample(screen.querySelector("#garage-example"), g, owner, escape);
+    renderGarageExample(screen.querySelector("#garage-example"));
     mountGarageSections();
     return;
   }
   const issues = allIssues.filter((i) => i.kind !== "owner" && i.garageIds.includes(id));
-  const contributions = canEditReadings
-    ? garageCategory("Внески", "<div data-garage-contributions></div>")
-    : "";
-  const electricity =
-    canEditReadings || garageMeterHistory(id).entries.length ? garageElectricitySection() : "";
-  screen.innerHTML = `<div class="details">${header}<section class="panel"><h2>Про гараж</h2><dl><dt>Ряд</dt><dd>${escape(g.row || "Не вказано")}</dd><dt>Номер боксу</dt><dd>${escape(g.number || "Не вказано")}</dd><dt>Тип</dt><dd>${g.type === "technical" ? "Технічний бокс" : "Гараж"}</dd><dt>ID запису</dt><dd>${escape(g.id)}</dd></dl></section>
-    <section class="panel detail-section" data-meter-details></section>
+  screen.innerHTML = `<div class="details">${header}<div data-garage-overview></div><section class="panel"><h2>Про гараж</h2><dl><dt>Ряд</dt><dd>${escape(g.row || "Не вказано")}</dd><dt>Номер боксу</dt><dd>${escape(g.number || "Не вказано")}</dd><dt>Тип</dt><dd>${g.type === "technical" ? "Технічний бокс" : "Гараж"}</dd><dt>ID запису</dt><dd>${escape(g.id)}</dd></dl></section>
     <div class="garage-categories">
       ${garageCategory("Власник і орендар", "<div data-garage-people></div>")}
       ${issues.length ? `<section class="notice"><h2>Потрібно перевірити</h2><ul>${issues.map((i) => `<li>${escape(issueLabels[i.kind])}</li>`).join("")}</ul></section>` : ""}
-      ${contributions}${electricity}${canEditReadings ? garageReceiptsSection() : ""}
+      ${garageCategory("Внески", "<div data-garage-contributions></div>")}${garageElectricitySection()}${canEditReadings ? garageReceiptsSection() : ""}
     </div></div>`;
   mountGarageSections();
 }
@@ -535,8 +533,21 @@ function render(focus = true) {
         ) +
         showInRowLink(cell);
     else missingPage();
-  } else if (view === "garage") garagePage(id, params);
-  else if (view === "owner") ownerPage(id, params);
+  } else if (view === "garage") {
+    garagePage(id, params);
+    const input = renderSearch({
+      name: "Пошук гаража",
+      label: "Номер гаража або прізвище",
+      value: "",
+      placeholder: "Наприклад, 1-01",
+      submit: true,
+    });
+    input.form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const query = input.value.trim();
+      if (query) location.hash = url("garages", { q: query });
+    });
+  } else if (view === "owner") ownerPage(id, params);
   else missingPage();
   screen.setAttribute("aria-busy", "false");
   document.title = `${screen.querySelector("h1").textContent} — ГБК «Ювілейний»`;
