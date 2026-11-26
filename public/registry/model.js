@@ -43,6 +43,14 @@ export function prepareData(source) {
 }
 export function filterGarages(data, filters = {}) {
   const query = normalize(filters.q).replace(/^(\d+)\s*[.,–—]\s*(?=\d)/, "$1-");
+  // Compute quality issues once per call, not once per garage.
+  const issueGarageIds = filters.issue
+    ? new Set(
+        qualityIssues(data)
+          .filter((i) => i.kind === filters.issue)
+          .flatMap((i) => i.garageIds),
+      )
+    : null;
   return data.garages
     .filter((g) => {
       const owner = data.ownerById.get(g.ownerId);
@@ -54,8 +62,7 @@ export function filterGarages(data, filters = {}) {
         (!filters.row || g.row === filters.row) &&
         (!filters.missing || !g.ownerId) &&
         (!filters.technical || g.type === "technical") &&
-        (!filters.issue ||
-          qualityIssues(data).some((i) => i.kind === filters.issue && i.garageIds.includes(g.id)))
+        (!issueGarageIds || issueGarageIds.has(g.id))
       );
     })
     .sort(
