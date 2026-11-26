@@ -106,7 +106,7 @@ for (const width of [320, 375, 768]) {
         expect(box.y + box.height).toBeLessThan(812);
       }
       await page.getByLabel("Ряд", { exact: true }).selectOption("3");
-      await page.getByLabel("Без власника", { exact: true }).check();
+      await page.getByRole("checkbox", { name: "Без власника", exact: true }).check();
       await expect(page.locator(".record")).not.toHaveCount(0);
       for (const record of await page.locator(".record").all()) {
         await expect(record.locator(".record-link")).toHaveText(/^Гараж 3-/);
@@ -114,7 +114,7 @@ for (const width of [320, 375, 768]) {
       }
       await page.reload();
       await expect(page.locator("#row")).toHaveValue("3");
-      await expect(page.getByLabel("Без власника", { exact: true })).toBeChecked();
+      await expect(page.getByRole("checkbox", { name: "Без власника", exact: true })).toBeChecked();
       await page.getByRole("button", { name: "Скинути фільтри" }).click();
       await expect(page.locator("#search")).toBeFocused();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
