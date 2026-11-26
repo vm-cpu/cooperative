@@ -50,7 +50,7 @@ test("garage people controls keep each garage and role independent in the embedd
   );
 
   await demo.getByRole("link", { name: "Гаражі", exact: true }).click();
-  await demo.getByRole("searchbox").fill("1-01");
+  await demo.getByRole("searchbox", { name: "Номер гаража або ім’я людини" }).fill("1-01");
   await demo.getByRole("link", { name: "Гараж 1-01", exact: true }).click();
   await category.click();
   await expect(owner.locator("time")).toHaveText("01.11.2026");
@@ -71,7 +71,7 @@ test("garage people controls keep each garage and role independent in the embedd
   await expect(owner.locator("time")).toHaveText("03.11.2026");
 
   await demo.getByRole("link", { name: "Гаражі", exact: true }).click();
-  await demo.getByRole("searchbox").fill("1-11");
+  await demo.getByRole("searchbox", { name: "Номер гаража або ім’я людини" }).fill("1-11");
   await demo.getByRole("link", { name: "Гараж 1-11", exact: true }).click();
   await category.click();
   await expect(tenant.getByRole("button")).toHaveText(["Додати"]);
@@ -93,7 +93,9 @@ test("garage people controls keep each garage and role independent in the embedd
   await expect(tenant.getByRole("button")).toHaveText(["Додати"]);
 
   await demo.getByRole("link", { name: "Гаражі", exact: true }).click();
-  await demo.getByRole("searchbox").fill("Зразковий Андрій");
+  await demo
+    .getByRole("searchbox", { name: "Номер гаража або ім’я людини" })
+    .fill("Зразковий Андрій");
   await expect(demo.getByRole("link", { name: "Гараж 1-11", exact: true })).toHaveCount(0);
   await demo.getByRole("link", { name: "Гараж 1-01", exact: true }).click();
   await category.click();
