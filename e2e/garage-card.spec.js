@@ -62,13 +62,19 @@ test("mobile card tables, receipt and local contribution payment", async ({ page
   await expect(search).toHaveValue("Тестова");
   await expect(page.getByLabel("Ряд", { exact: true })).toHaveValue("1");
   await page.getByRole("link", { name: "Відкрити картку гаража 1-2", exact: true }).click();
-  await card.getByText("Внески", { exact: true }).click();
+  await card
+    .locator(".garage-category > summary")
+    .filter({ hasText: /^Внески$/ })
+    .click();
   await expect(card.getByRole("table", { name: "Історія членських внесків" })).not.toContainText(
     "123,45",
   );
   await page.goto("/#garage/garage-01");
   await page.reload();
-  await card.getByText("Внески", { exact: true }).click();
+  await card
+    .locator(".garage-category > summary")
+    .filter({ hasText: /^Внески$/ })
+    .click();
   await expect(card.getByRole("table", { name: "Історія членських внесків" })).toContainText(
     "123,45",
   );
@@ -83,7 +89,14 @@ test("mobile card tables, receipt and local contribution payment", async ({ page
 test("desktop garage overview exposes payments and meter details", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/#garage/garage-01");
-  await expect(page.getByText("Боргу немає", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Гараж 1-01" })).toBeVisible();
+  const contacts = page.getByRole("region", { name: "Контакти гаража" });
+  await expect(contacts.getByRole("link", { name: "Подзвонити · власник" })).toHaveAttribute(
+    "href",
+    "tel:+380000000101",
+  );
+  const dues = page.getByRole("region", { name: "Внески", exact: true });
+  await expect(dues.getByText("Боргу немає", { exact: true })).toBeVisible();
   await expect(page.getByText("Останній показник", { exact: true })).toBeVisible();
   const meter = page.locator("[data-electricity-meter-info]");
   await expect(meter).toBeHidden();
@@ -92,5 +105,6 @@ test("desktop garage overview exposes payments and meter details", async ({ page
   const search = page.getByRole("searchbox", { name: "Номер гаража або прізвище" });
   await search.fill("1-2");
   await page.getByRole("button", { name: "Знайти", exact: true }).click();
-  await expect(page.getByRole("link", { name: "Гараж 1-2", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Гараж 1-2", exact: true }).click();
+  await expect(dues.getByText(/300,00/)).toBeVisible();
 });

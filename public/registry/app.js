@@ -465,22 +465,21 @@ function garagePage(id, params) {
     (c) => c.row === g.row && c.number !== null && findRegistryGarage(data, c)?.id === g.id,
   );
   const header =
-    backLink(params) +
+    `<div class="garage-card-nav">${backLink(params)}${showInRowLink(cell)}</div>` +
     title(
       `Гараж ${label(g)}`,
       g.provisional
         ? "Умовний ряд · Номер і розташування орієнтовні"
         : "Картка гаража · Вигадані дані",
-    ) +
-    showInRowLink(cell);
+    );
   if (garageExamples.has(id)) {
-    screen.innerHTML = `<div class="details">${header}<div id="garage-example"></div></div>`;
+    screen.innerHTML = `<div class="details garage-details">${header}<div id="garage-example"></div></div>`;
     renderGarageExample(screen.querySelector("#garage-example"));
     mountGarageSections();
     return;
   }
   const issues = allIssues.filter((i) => i.kind !== "owner" && i.garageIds.includes(id));
-  screen.innerHTML = `<div class="details">${header}<div data-garage-overview></div><section class="panel"><h2>Про гараж</h2><dl><dt>Ряд</dt><dd>${escape(g.row || "Не вказано")}</dd><dt>Номер боксу</dt><dd>${escape(g.number || "Не вказано")}</dd><dt>Тип</dt><dd>${g.type === "technical" ? "Технічний бокс" : "Гараж"}</dd><dt>ID запису</dt><dd>${escape(g.id)}</dd></dl></section>
+  screen.innerHTML = `<div class="details garage-details">${header}<div data-garage-overview></div><section class="panel"><h2>Про гараж</h2><dl><dt>Ряд</dt><dd>${escape(g.row || "Не вказано")}</dd><dt>Номер боксу</dt><dd>${escape(g.number || "Не вказано")}</dd><dt>Тип</dt><dd>${g.type === "technical" ? "Технічний бокс" : "Гараж"}</dd><dt>ID запису</dt><dd>${escape(g.id)}</dd></dl></section>
     <div class="garage-categories">
       ${garageCategory("Власник і орендар", "<div data-garage-people></div>")}
       ${issues.length ? `<section class="notice"><h2>Потрібно перевірити</h2><ul>${issues.map((i) => `<li>${escape(issueLabels[i.kind])}</li>`).join("")}</ul></section>` : ""}

@@ -33,23 +33,31 @@ export function renderGarageOverview(host, garage, owner, escape) {
         .map(([role, person]) => {
           const phone = person?.phone ?? "";
           const dial = phone.replace(/[^+0-9]/g, "");
-          return `<div><p><strong>${role}</strong> · <span>${escape(person?.name ?? "Без власника")}</span></p>
-          ${phone ? `<p>${escape(phone)} ${/^\+?\d+$/.test(dial) ? `<a class="button quiet" href="tel:${dial}" aria-label="Подзвонити · ${role.toLowerCase()}">Подзвонити</a>` : ""}</p>` : ""}</div>`;
+          return `<div class="garage-contact">
+            <div>
+              <p class="garage-contact-role">${role}</p>
+              <p class="garage-contact-name">${escape(person?.name ?? "Без власника")}</p>
+              ${phone ? `<p class="garage-contact-phone">${escape(phone)}</p>` : ""}
+            </div>
+            ${/^\+?\d+$/.test(dial) ? `<a class="button garage-call" href="tel:${dial}" aria-label="Подзвонити · ${role.toLowerCase()}">Подзвонити</a>` : ""}
+          </div>`;
         })
         .join("")}
     </section>
     <div class="garage-payment-overview">
-      <section class="panel">
-        <button type="button" data-open-garage-category="Внески">Переглянути внески</button>
-        <dl><dt>Борг за внесками</dt><dd class="garage-balance">${example ? (example.debt ? escape(money(example.debt)) : "Боргу немає") : "Немає даних"}</dd>
+      <section class="panel garage-payment-card" aria-labelledby="garage-dues-heading">
+        <h2 id="garage-dues-heading">Внески</h2>
+        <dl><dt>Борг за внесками</dt><dd class="garage-balance${example?.debt ? " garage-balance-due" : ""}">${example ? (example.debt ? escape(money(example.debt)) : "Боргу немає") : "Немає даних"}</dd>
         <dt>Оплачено до кінця місяця</dt><dd>${example?.paidThrough ? escape(periodLabel(example.paidThrough)) : "Немає даних"}</dd>
         <dt>Остання оплата</dt><dd>${paymentDate(contributions)}</dd></dl>
+        <button type="button" data-open-garage-category="Внески">Переглянути внески</button>
       </section>
-      <section class="panel">
-        <button type="button" data-open-garage-category="Світло">Переглянути світло</button>
-        <dl><dt>Борг за світло</dt><dd class="garage-balance">Немає даних</dd>
+      <section class="panel garage-payment-card" aria-labelledby="garage-light-heading">
+        <h2 id="garage-light-heading">Світло</h2>
+        <dl><dt>Борг за світло</dt><dd class="garage-balance garage-balance-unknown">Немає даних</dd>
         <dt>Остання оплата</dt><dd>${paymentDate(light)}</dd>
         <dt>Останній показник</dt><dd>${reading ? `${reading.value} кВт·год · ${formatCalendarDate(reading.date)}` : "Немає даних"}</dd></dl>
+        <button type="button" data-open-garage-category="Світло">Переглянути світло</button>
       </section>
     </div>`;
 }
