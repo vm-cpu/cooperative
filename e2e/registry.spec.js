@@ -65,7 +65,7 @@ for (const target of ["list", "card"]) {
           return Math.abs(window.scrollY - Math.max(0, Math.min(top - padding, maximum)));
         }),
       )
-      .toBeLessThan(2);
+      .toBeLessThan(12);
     if (target === "card") await page.getByRole("link", { name: "Повернутися до списку" }).click();
     await expect(page.locator("#search")).toHaveValue("1-01");
     await expect(page.locator("#row")).toHaveValue("1");

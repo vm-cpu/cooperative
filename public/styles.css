@@ -1154,3 +1154,13 @@ label {
     margin: 0;
   }
 }
+
+@media (max-height: 300px) {
+  :root {
+    scroll-padding-top: 0;
+  }
+  .directory-panel {
+    position: relative;
+    max-height: none;
+  }
+}
