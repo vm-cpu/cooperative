@@ -14,13 +14,9 @@ export default {
     const response = await env.ASSETS.fetch(request);
     const production = env.APP_ENV === "production";
     const label = production ? "Робоче середовище" : "Тестове середовище";
-    const description = production
-      ? "Застосунок ще готується до запуску. Реєстр і внесення даних поки недоступні."
-      : "Місце для перевірки майбутнього реєстру гаражів і власників. Функції реєстру ще розробляються; даних членів кооперативу тут немає.";
     const result = response.headers.get("Content-Type")?.includes("text/html")
       ? new HTMLRewriter()
           .on("[data-environment]", { element: (e) => e.setInnerContent(label) })
-          .on("[data-description]", { element: (e) => e.setInnerContent(description) })
           .transform(response)
       : response;
     const secured = new Response(result.body, result);

@@ -12,7 +12,10 @@ describe("Worker", () => {
   it("GET / віддає стартову сторінку", async () => {
     const res = await exports.default.fetch("https://example.com/");
     expect(res.status).toBe(200);
-    expect(await res.text()).toContain("Кооператив");
+    const html = await res.text();
+    expect(html).toContain("Кооператив");
+    // The Worker writes the environment label into the real page, not only into a mock.
+    expect(html).toContain("Тестове середовище");
   });
 });
 
@@ -57,7 +60,7 @@ describe("Deployment configuration", () => {
       APP_ENV: environment,
       ASSETS: {
         fetch: () =>
-          new Response("<p data-environment></p><p data-description></p>", {
+          new Response("<span data-environment></span>", {
             headers: { "Content-Type": "text/html" },
           }),
       },
