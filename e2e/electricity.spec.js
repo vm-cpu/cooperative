@@ -8,7 +8,7 @@ test("saves a row together, restores its position and updates garage history on 
 }) => {
   await page.setViewportSize({ width: 375, height: 820 });
   await page.goto("/");
-  await page.getByRole("navigation").getByRole("link", { name: "Електрика" }).click();
+  await page.getByRole("navigation").getByRole("link", { name: "Світло" }).click();
   const row = page
     .locator("#electricity-rows details")
     .filter({ has: page.getByText("Ряд 1", { exact: true }) });
@@ -62,7 +62,7 @@ test("saves a row together, restores its position and updates garage history on 
   await expect(page.getByRole("heading", { name: "Гараж 1-01" })).toBeVisible();
   await page
     .locator("#garage-example summary")
-    .filter({ hasText: /^Електрика$/ })
+    .filter({ hasText: /^Світло$/ })
     .click();
   const readings = page.getByRole("table", { name: "Показники лічильника" });
   await expect(readings.getByRole("row", { name: /12.11.2026/ })).toContainText(/1\s272/);

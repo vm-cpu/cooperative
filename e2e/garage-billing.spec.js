@@ -10,8 +10,8 @@ test("demo calculates monthly electricity charges and saves garage payments and 
     route.fulfill({ contentType: "text/html", body: html }),
   );
   await page.goto("/billing-demo#electricity");
-  await page.getByText("Тарифи на електрику", { exact: true }).click();
-  const tariffForm = page.getByRole("form", { name: "Тариф на електрику" });
+  await page.getByText("Тарифи на світло", { exact: true }).click();
+  const tariffForm = page.getByRole("form", { name: "Тариф на світло" });
   async function addTariff(date, rate) {
     await tariffForm.getByLabel("Дата зміни тарифу").fill(date);
     await tariffForm.getByLabel("Тариф, грн за кВт·год").fill(rate);
@@ -24,7 +24,7 @@ test("demo calculates monthly electricity charges and saves garage payments and 
 
   await page.goto("/billing-demo#garage/garage-01");
   const category = (name) => page.locator(".garage-category > summary").filter({ hasText: name });
-  await category("Електрика").click();
+  await category("Світло").click();
   const readings = page.getByRole("table", { name: "Показники лічильника" });
   const october = readings.getByRole("row", { name: /01\.11\.2026/ });
   await expect(october).toContainText("жовтень 2026");
@@ -38,7 +38,7 @@ test("demo calculates monthly electricity charges and saves garage payments and 
   await expect(november).toContainText("листопад 2026");
   await expect(november.getByRole("cell").last()).toHaveText("100,00");
 
-  const payments = page.getByRole("table", { name: "Оплати за електрику" });
+  const payments = page.getByRole("table", { name: "Оплати за світло" });
   const recorded = payments.getByRole("row", { name: /02\.12\.2026/ });
   await expect(recorded).toHaveCount(0);
   await expect(page.getByText("Внести оплату", { exact: true })).toHaveCount(0);
@@ -65,7 +65,7 @@ test("demo calculates monthly electricity charges and saves garage payments and 
   await receipt.getByRole("button", { name: "Зберегти квитанцію" }).click();
   const receipts = page.getByRole("table", { name: "Історія квитанцій" });
   await expect(receipts.getByRole("columnheader", { name: "За що" })).toBeVisible();
-  await expect(receipts.getByRole("row", { name: /ДЕМО-001/ })).toContainText("Електрика");
+  await expect(receipts.getByRole("row", { name: /ДЕМО-001/ })).toContainText("Світло");
 
   await expect(recorded).toHaveCount(1);
   await expect(recorded).toContainText("172,00");
@@ -73,7 +73,7 @@ test("demo calculates monthly electricity charges and saves garage payments and 
   const navigation = page.getByRole("navigation");
   await navigation.getByRole("link", { name: "Квитанції", exact: true }).click();
   const overview = page.getByRole("table", { name: "Загальна таблиця квитанцій" });
-  await page.getByRole("searchbox").fill("1-01");
+  await page.getByRole("searchbox", { name: "Гараж або власник" }).fill("1-01");
   const link = overview.getByRole("link", { name: "Відкрити квитанцію №ДЕМО-001 гаража 1-01" });
   await link.click();
   await expect(page.getByText("Відкрити квитанцію №ДЕМО-001", { exact: true })).toBeFocused();
@@ -84,13 +84,13 @@ test("demo calculates monthly electricity charges and saves garage payments and 
   await expect(page.locator("[data-meter-details-list]")).toContainText("00123-М");
   await expect(newReceipt).toContainText("жовтень 2026 р. – листопад 2026 р.");
   await expect(newReceipt.getByRole("button", { name: "Надрукувати" })).toBeDisabled();
-  await category("Електрика").click();
+  await category("Світло").click();
   await expect(recorded).toHaveCount(1);
   await expect(november.getByRole("cell").last()).toHaveText("100,00");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
 
   await page.getByRole("link", { name: "Повернутися до квитанцій" }).click();
-  await expect(page.getByRole("searchbox")).toHaveValue("1-01");
+  await expect(page.getByRole("searchbox", { name: "Гараж або власник" })).toHaveValue("1-01");
   await page.goto("/billing-demo#electricity?row=1");
   const row = page
     .getByRole("table", { name: "Останні показники" })
@@ -99,7 +99,7 @@ test("demo calculates monthly electricity charges and saves garage payments and 
   await expect(row).toContainText("007-П");
 
   await page.goto("/billing-demo#garage/garage-02");
-  await category("Електрика").click();
+  await category("Світло").click();
   await expect(
     readings
       .getByRole("row", { name: /01\.11\.2026/ })

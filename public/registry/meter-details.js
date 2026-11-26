@@ -17,7 +17,7 @@ export function meterDetailsList(details, escape) {
     <dt>Номер пломби лічильника</dt><dd>${escape(details?.sealNumber || "Не вказано")}</dd></dl>`;
 }
 
-export function renderMeterDetailsEditor(host, id, escape, onSave) {
+export function renderMeterDetailsEditor(host, id, escape) {
   const initial = readMeterDetails(id);
   host.innerHTML = `
     <h2>Дані лічильника</h2>
@@ -62,7 +62,6 @@ export function renderMeterDetailsEditor(host, id, escape, onSave) {
     error.textContent = "";
     status.textContent = "Дані лічильника збережено.";
     close();
-    onSave(details);
   }
 
   // The demo preview can block native form submission.

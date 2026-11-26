@@ -138,7 +138,7 @@ function renderReadingForm(body, garages, saved, escape, { row, onSave, onCancel
   });
 }
 
-export function renderGarageMeterReadings(host, garage, escape, canEdit) {
+export function renderGarageMeterReadings(host, garage, escape, canEdit, onSave) {
   function showHistory(message = "") {
     const history = garageMeterHistory(garage.id);
     const actions =
@@ -162,7 +162,10 @@ export function renderGarageMeterReadings(host, garage, escape, canEdit) {
         return;
       }
       renderReadingForm(actionsHost, [garage], saved, escape, {
-        onSave: () => showHistory("Збережено показників: 1."),
+        onSave: () => {
+          showHistory("Збережено показників: 1.");
+          onSave?.();
+        },
         onCancel: () => {
           showHistory();
           host.querySelector("[data-edit-readings]")?.focus();

@@ -11,15 +11,15 @@ test("five garages have complete examples and basic cards accept contributions a
     await expect(page.locator(".garage-category > summary")).toHaveText([
       "Власник і орендар",
       "Внески",
-      "Електрика",
+      "Світло",
       "Квитанції",
     ]);
   }
   await page.goto("/#garage/garage-04");
   await expect(page.getByRole("heading", { name: "Про гараж" })).toBeVisible();
   const categories = page.locator(".garage-category > summary");
-  await expect(categories).toHaveText(["Власник і орендар", "Внески", "Електрика", "Квитанції"]);
-  await categories.filter({ hasText: "Електрика" }).click();
+  await expect(categories).toHaveText(["Власник і орендар", "Внески", "Світло", "Квитанції"]);
+  await categories.filter({ hasText: "Світло" }).click();
   await expect(page.getByText("Показників лічильника ще немає.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Внести показники" })).toBeVisible();
 });
@@ -35,7 +35,7 @@ test("mobile card tables, receipt and local contribution payment", async ({ page
   const card = page.locator("#garage-example");
   await expect(card.getByText("березень 2027 р.", { exact: true })).toBeVisible();
   await expect(card.locator("table").first()).toBeHidden();
-  for (const name of ["Власник і орендар", "Внески", "Електрика", "Квитанції"]) {
+  for (const name of ["Власник і орендар", "Внески", "Світло", "Квитанції"]) {
     await card.locator(".garage-category > summary").filter({ hasText: name }).click();
   }
   await card.getByText("Відкрити квитанцію №Е-001", { exact: true }).click();
@@ -72,10 +72,25 @@ test("mobile card tables, receipt and local contribution payment", async ({ page
   await expect(card.getByRole("table", { name: "Історія членських внесків" })).toContainText(
     "123,45",
   );
-  for (const name of ["Власник і орендар", "Електрика", "Квитанції"]) {
+  for (const name of ["Власник і орендар", "Світло", "Квитанції"]) {
     await card.locator(".garage-category > summary").filter({ hasText: name }).click();
   }
   await page.screenshot({ path: "test-results/garage-card-phone.png", fullPage: true });
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.screenshot({ path: "test-results/garage-card-desktop.png", fullPage: true });
+});
+
+test("desktop garage overview exposes payments and meter details", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/#garage/garage-01");
+  await expect(page.getByText("Боргу немає", { exact: true })).toBeVisible();
+  await expect(page.getByText("Останній показник", { exact: true })).toBeVisible();
+  const meter = page.locator("[data-electricity-meter-info]");
+  await expect(meter).toBeHidden();
+  await page.getByRole("button", { name: "Переглянути світло" }).click();
+  await expect(meter.locator("dt").filter({ hasText: "Номер пломби лічильника" })).toBeVisible();
+  const search = page.getByRole("searchbox", { name: "Номер гаража або прізвище" });
+  await search.fill("1-2");
+  await page.getByRole("button", { name: "Знайти", exact: true }).click();
+  await expect(page.getByRole("link", { name: "Гараж 1-2", exact: true })).toBeVisible();
 });

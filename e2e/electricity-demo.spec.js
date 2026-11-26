@@ -37,7 +37,8 @@ async function saveSingleReading(screen, checkInvalid = false) {
 
 async function saveFromGarageCard(screen, withEnter) {
   await screen.getByRole("link", { name: "1-01", exact: true }).click();
-  const electricity = screen.locator("#garage-example summary").filter({ hasText: /^Електрика$/ });
+  const electricity = screen.locator("#garage-example summary").filter({ hasText: /^Світло$/ });
+  await electricity.evaluate((summary) => summary.scrollIntoView({ block: "center" }));
   await electricity.click();
   const readings = screen.getByRole("table", { name: "Показники лічильника" });
   await expect(readings.getByRole("row", { name: /12.11.2026/ })).toContainText(/1\s272/);
@@ -68,8 +69,8 @@ test("the downloadable HTML shares readings between a row and garage card", asyn
   await writeFile(file, html);
   await page.goto(pathToFileURL(file).href);
   await expect(page.getByRole("heading", { name: "Гаражі", exact: true })).toBeVisible();
-  await page.getByRole("navigation").getByRole("link", { name: "Електрика", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Електрика", exact: true })).toBeVisible();
+  await page.getByRole("navigation").getByRole("link", { name: "Світло", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Світло", exact: true })).toBeVisible();
   await saveSingleReading(page);
   await page.reload();
   await saveFromGarageCard(page, true);

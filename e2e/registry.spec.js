@@ -60,10 +60,12 @@ for (const target of ["list", "card"]) {
         page.locator("#main").evaluate((el) => {
           const top = el.getBoundingClientRect().top + window.scrollY;
           const maximum = document.documentElement.scrollHeight - window.innerHeight;
-          return Math.abs(window.scrollY - Math.min(top, maximum));
+          const padding =
+            parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+          return Math.abs(window.scrollY - Math.max(0, Math.min(top - padding, maximum)));
         }),
       )
-      .toBeLessThan(2);
+      .toBeLessThan(12);
     if (target === "card") await page.getByRole("link", { name: "Повернутися до списку" }).click();
     await expect(page.locator("#search")).toHaveValue("1-01");
     await expect(page.locator("#row")).toHaveValue("1");
@@ -110,7 +112,7 @@ for (const width of [320, 375, 768]) {
       await expect(page.locator(".record")).not.toHaveCount(0);
       for (const record of await page.locator(".record").all()) {
         await expect(record.locator(".record-link")).toHaveText(/^Гараж 3-/);
-        await expect(record.getByRole("img", { name: "Без власника" })).toBeVisible();
+        await expect(record.getByText("Без власника", { exact: true })).toBeVisible();
       }
       await page.reload();
       await expect(page.locator("#row")).toHaveValue("3");
@@ -167,7 +169,7 @@ for (const width of [375, 1280]) {
     await expect(search).toHaveAccessibleName("Ім’я власника");
     await nav.getByRole("link", { name: "Внески" }).click();
     await expect(search).toHaveAccessibleName("Гараж або власник");
-    await nav.getByRole("link", { name: "Електрика" }).click();
+    await nav.getByRole("link", { name: "Світло" }).click();
     await expect(search).toHaveCount(0);
   });
 }

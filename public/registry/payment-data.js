@@ -44,7 +44,7 @@ export function parseAmount(text) {
 
 const validAmount = (amount) => Number.isInteger(amount) && amount >= 1 && amount <= maxPayment;
 
-export const receiptPurposes = { electricity: "Електрика", contributions: "Членські внески" };
+export const receiptPurposes = { electricity: "Світло", contributions: "Членські внески" };
 
 const storageKey = (kind, id) => `cooperative.demo.${kind}.v1.${id}`;
 

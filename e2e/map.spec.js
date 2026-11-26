@@ -14,7 +14,7 @@ test("map and list retain query, uniquely matched garage opens and returns to ma
   const cell = page.getByRole("button", { name: "Гараж 1-1", exact: true });
   await cell.click();
   await expect(page.locator("h1")).toHaveText("Гараж 1-01");
-  await page.getByRole("link", { name: "Повернутися до карти" }).click();
+  await page.getByRole("link", { name: "Повернутися до мапи" }).click();
   await expect(world).toHaveAttribute("transform", cameraBefore);
   await expect(page.locator(".map-viewport")).toBeVisible();
   await page.getByRole("link", { name: "Список", exact: true }).click();
@@ -43,7 +43,7 @@ test("rotation keeps labels level, reset faces entrance, unknowns have no invent
   await unknown.focus();
   await page.keyboard.press("Enter");
   await expect(page.locator("h1")).toHaveText("Номер уточнюється");
-  await page.getByRole("link", { name: "Повернутися до карти" }).click();
+  await page.getByRole("link", { name: "Повернутися до мапи" }).click();
   await expect(page.locator(".map-landmark text").filter({ hasText: /^Яма$/ })).toHaveCount(4);
   await page.locator(".map-cell").first().focus();
   await page.keyboard.press("ArrowRight");
@@ -176,6 +176,6 @@ test("a row page opens the shared garage card and restores its part", async ({ p
   await page.getByRole("searchbox").fill("Прикладенко");
   await page.getByRole("link", { name: "Гараж 1-10", exact: true }).click();
   await expect(page.locator("h1")).toHaveText("Гараж 1-10");
-  await page.getByRole("link", { name: "Повернутися до карти" }).click();
+  await page.getByRole("link", { name: "Повернутися до мапи" }).click();
   await expect(page.getByRole("searchbox")).toHaveValue("Прикладенко");
 });
