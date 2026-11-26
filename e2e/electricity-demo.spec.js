@@ -32,7 +32,7 @@ async function saveSingleReading(screen, checkInvalid = false) {
   const garage = screen.getByRole("row", { name: /1-01/ });
   await expect(garage).toContainText(/1\s272/);
   await expect(garage).toContainText("12.11.2026");
-  await expect(screen.getByRole("row", { name: /1-2/ })).toContainText("587");
+  await expect(screen.getByRole("row", { name: /^1-2\b/ })).toContainText("587");
 }
 
 async function saveFromGarageCard(screen, withEnter) {
@@ -57,7 +57,7 @@ async function saveFromGarageCard(screen, withEnter) {
   const garage = screen.getByRole("row", { name: /1-01/ });
   await expect(garage).toContainText(/1\s280/);
   await expect(garage).toContainText("13.11.2026");
-  await expect(screen.getByRole("row", { name: /1-2/ })).toContainText("587");
+  await expect(screen.getByRole("row", { name: /^1-2\b/ })).toContainText("587");
 }
 
 test("the downloadable HTML shares readings between a row and garage card", async ({

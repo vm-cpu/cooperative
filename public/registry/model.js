@@ -42,14 +42,14 @@ export function prepareData(source) {
   return { owners, garages, ownerById };
 }
 export function filterGarages(data, filters = {}) {
-  const query = normalize(filters.q);
+  const query = normalize(filters.q).replace(/^(\d+)\s*[.,–—]\s*(?=\d)/, "$1-");
   return data.garages
     .filter((g) => {
       const owner = data.ownerById.get(g.ownerId);
       return (
         (!query ||
           normalize(
-            `${garageLabel(g)} ${owner?.name ?? ""} ${g.tenant?.person.name ?? ""}`,
+            `${g.row}-${g.number.replace(/^0+(?=\d)/, "")} ${garageLabel(g)} ${owner?.name ?? ""} ${g.tenant?.person.name ?? ""}`,
           ).includes(query)) &&
         (!filters.row || g.row === filters.row) &&
         (!filters.missing || !g.ownerId) &&

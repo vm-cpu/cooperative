@@ -14,24 +14,32 @@ const ANGLE_KEY = "cooperative-map-angle-v2";
 let disposeMap = () => {};
 let camera;
 let previousSearch;
+let lastCell;
 function node(name, attributes = {}, text) {
   const element = document.createElementNS(SVG, name);
   for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, value);
   if (text !== undefined) element.textContent = text;
   return element;
 }
-export function renderMap(host, data, filters, matches, detailUrl) {
+export function renderMap(host, data, filters, matches, cellUrl, rowUrl) {
   disposeMap();
   host.innerHTML = `<div class="map-controls" aria-label="Керування картою">
     <button type="button" data-map="in">Збільшити</button><button type="button" data-map="out">Зменшити</button>
     <button type="button" data-map="left">↶ Ліворуч</button><button type="button" data-map="right">Праворуч ↷</button>
     <button type="button" data-map="reset">Початковий вигляд</button>
     </div><p class="map-help">КПП — зі сторони в’їзду. Перетягніть карту або використайте клавіші зі стрілками. «?» — номер уточнюється.</p>
-    <div class="map-viewport" tabindex="0" role="region" aria-label="Карта кооперативу. Стрілки пересувають карту, плюс і мінус змінюють масштаб."></div>
-    <div class="map-selection" aria-live="polite"><p>Оберіть бокс на карті, щоб переглянути номер і доступну картку.</p></div>
+    <div class="map-layout"><div class="map-viewport" tabindex="0" role="region" aria-label="Карта кооперативу. Стрілки пересувають карту, плюс і мінус змінюють масштаб."></div>
+    <section class="map-selector"><h2>Обрати ряд</h2><div class="map-row-buttons">${[
+      ...new Set(planCells.map((c) => c.row)),
+    ]
+      .sort((a, b) => a - b)
+      .map(
+        (row) =>
+          `<a class="button quiet" href="${rowUrl(row).replaceAll("&", "&amp;")}">Ряд ${row}</a>`,
+      )
+      .join("")}</div><p>Ряд 4 умовний. Його номери й розташування орієнтовні.</p></section></div>
     <p class="map-disclaimer">Чернетка за фото паперового плану. Розміри приблизні. Номери зі знаком «?» та межі потребують звірки. Власники у картках вигадані.</p>`;
   const viewport = host.querySelector(".map-viewport");
-  const selection = host.querySelector(".map-selection");
   const svg = node("svg", {
     viewBox: "0 0 1000 600",
     role: "group",
@@ -44,7 +52,6 @@ export function renderMap(host, data, filters, matches, detailUrl) {
   let zoom = 1;
   let panX = 0;
   let panY = 0;
-  let selected;
   let drag;
   let dragged = false;
   try {
@@ -61,31 +68,9 @@ export function renderMap(host, data, filters, matches, detailUrl) {
   );
   const labels = [];
   const garageNodes = [];
-  function choose(cell, group) {
-    selected?.classList.remove("selected");
-    selected = group;
-    group.classList.add("selected");
-    selection.replaceChildren();
-    const heading = document.createElement("h2");
-    heading.textContent = cell.number === null ? "Номер уточнюється" : `Гараж ${planLabel(cell)}`;
-    const info = document.createElement("p");
-    info.textContent = `Ряд ${cell.row} · Місце на схемі ${cell.id}`;
-    selection.append(heading, info);
-    const garage = findRegistryGarage(data, cell);
-    if (garage) {
-      const link = document.createElement("a");
-      link.className = "button";
-      link.href = detailUrl("garage", garage.id);
-      link.textContent = "Відкрити картку гаража";
-      selection.append(link);
-    } else {
-      const note = document.createElement("p");
-      note.textContent =
-        cell.number === null
-          ? "Повідомте позначення місця та правильний номер для звірки."
-          : "Цього гаража ще немає у тестовому реєстрі.";
-      selection.append(note);
-    }
+  function choose(cell) {
+    lastCell = cell.id;
+    location.hash = cellUrl(cell);
   }
   for (const cell of planCells) {
     const garage = findRegistryGarage(data, cell);
@@ -96,7 +81,7 @@ export function renderMap(host, data, filters, matches, detailUrl) {
     const match =
       rowMatch && (garage ? matchingIds.has(garage.id) : !needsRegistry && (!query || directMatch));
     const group = node("g", {
-      class: `map-cell${cell.number === null ? " uncertain" : ""}${hasFilter && match ? " match" : ""}${hasFilter && !match ? " dimmed" : ""}`,
+      class: `map-cell${lastCell === cell.id ? " selected" : ""}${cell.row === "4" ? " provisional" : ""}${cell.number === null ? " uncertain" : ""}${hasFilter && match ? " match" : ""}${hasFilter && !match ? " dimmed" : ""}`,
       tabindex: garageNodes.length === 0 ? 0 : -1,
       role: "button",
       "aria-label":
@@ -104,6 +89,7 @@ export function renderMap(host, data, filters, matches, detailUrl) {
           ? `Ряд ${cell.row}, номер уточнюється, місце ${cell.id}`
           : `Гараж ${planLabel(cell)}`,
       "data-cell": cell.id,
+      "data-record": cell.id,
     });
     group.append(node("polygon", { points: cell.points.map((p) => p.join(",")).join(" ") }));
     const label = node(
@@ -120,7 +106,7 @@ export function renderMap(host, data, filters, matches, detailUrl) {
     group.append(label);
     labels.push({ element: label, x: cell.x, y: cell.y });
     group.addEventListener("click", () => {
-      if (!dragged) choose(cell, group);
+      if (!dragged) choose(cell);
     });
     group.addEventListener("focus", () => {
       for (const item of garageNodes)
@@ -138,7 +124,7 @@ export function renderMap(host, data, filters, matches, detailUrl) {
       }
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
-        choose(cell, group);
+        choose(cell);
       }
     });
     world.append(group);
@@ -197,6 +183,7 @@ export function renderMap(host, data, filters, matches, detailUrl) {
   }
   function update() {
     camera = { angle, zoom, panX, panY };
+    svg.classList.toggle("map-overview", zoom < 4);
     svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
     world.setAttribute(
       "transform",
@@ -332,6 +319,6 @@ export function renderMap(host, data, filters, matches, detailUrl) {
   status.className = "map-count";
   status.textContent = hasFilter
     ? `На карті знайдено: ${count}. Непрочитані номери можуть бути відсутні серед результатів.`
-    : "Номер ряду й повний номер боксу показуються після вибору.";
+    : "Натисніть на бокс, щоб відкрити його картку.";
   host.prepend(status);
 }
