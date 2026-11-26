@@ -1062,7 +1062,7 @@ label {
 }
 
 .map-overview .map-cell text {
-  opacity: 0;
+  display: none;
 }
 .map-layout {
   display: grid;

@@ -137,6 +137,13 @@ test("map zoom and rotation preserve a searched garage at the center; drag and r
     .toBe(true);
   const before = await cell.boundingBox(),
     area = await viewport.boundingBox();
+  await viewport.evaluate((element) => {
+    const label = element.querySelector(".map-cell text");
+    const observer = new MutationObserver(() => {
+      element.dataset.labelMoved = "true";
+    });
+    observer.observe(label, { attributes: true, attributeFilter: ["transform"] });
+  });
   await page.mouse.move(area.x + area.width / 2, area.y + area.height / 2);
   await page.mouse.down();
   await page.mouse.move(area.x + area.width / 2 + 50, area.y + area.height / 2 + 30, { steps: 5 });
@@ -145,6 +152,7 @@ test("map zoom and rotation preserve a searched garage at the center; drag and r
   expect(await viewport.evaluate((el) => [el.scrollLeft, el.scrollTop])).toEqual([0, 0]);
   expect(after.x - before.x).toBeCloseTo(50, 0);
   expect(after.y - before.y).toBeCloseTo(30, 0);
+  expect(await viewport.getAttribute("data-label-moved")).toBeNull();
   await page.getByRole("button", { name: "Початковий вигляд", exact: true }).click();
   await expect(page.locator(".map-cell text").first()).toHaveAttribute("transform", /^rotate\(0 /);
 });

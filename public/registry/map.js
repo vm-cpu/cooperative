@@ -54,6 +54,7 @@ export function renderMap(host, data, filters, matches, cellUrl, rowUrl) {
   let panY = 0;
   let drag;
   let dragged = false;
+  let panFrame = null;
   try {
     angle = Number(localStorage.getItem(ANGLE_KEY) ?? DEFAULT_ANGLE);
   } catch {
@@ -181,25 +182,31 @@ export function renderMap(host, data, filters, matches, cellUrl, rowUrl) {
     panY = -scale() * position.y;
     update();
   }
-  function update() {
+  function updatePosition() {
     camera = { angle, zoom, panX, panY };
-    svg.classList.toggle("map-overview", zoom < 4);
-    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
     world.setAttribute(
       "transform",
       `translate(${width / 2 + panX} ${height / 2 + panY}) scale(${scale()}) rotate(${angle}) translate(${-planCenter.x} ${-planCenter.y})`,
     );
+  }
+  let labelAngle;
+  function update() {
+    svg.classList.toggle("map-overview", zoom < 4);
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    updatePosition();
+    host.querySelector('[data-map="in"]').disabled = zoom >= 20;
+    host.querySelector('[data-map="out"]').disabled = zoom <= 1;
+    if (labelAngle === angle) return;
+    labelAngle = angle;
+    const radians = (angle * Math.PI) / 180;
     for (const label of labels) {
       label.element.setAttribute("transform", `rotate(${-angle} ${label.x} ${label.y})`);
       if (label.landmark) {
         const { w, h, name } = label.landmark;
-        const radians = (angle * Math.PI) / 180;
         const available = Math.abs(w * Math.cos(radians)) + Math.abs(h * Math.sin(radians));
         label.element.style.fontSize = `${Math.min(17, (available - 6) / (name.length * 0.65))}px`;
       }
     }
-    host.querySelector('[data-map="in"]').disabled = zoom >= 20;
-    host.querySelector('[data-map="out"]').disabled = zoom <= 1;
   }
   function action(name) {
     const oldAngle = angle,
@@ -264,18 +271,28 @@ export function renderMap(host, data, filters, matches, cellUrl, rowUrl) {
     if (!drag) return;
     const dx = event.clientX - drag.x,
       dy = event.clientY - drag.y;
-    if (Math.hypot(dx, dy) > 6) {
+    if (!dragged && Math.hypot(dx, dy) > 6) {
       dragged = true;
       viewport.setPointerCapture(event.pointerId);
     }
     if (dragged) {
       panX = drag.panX + dx;
       panY = drag.panY + dy;
-      update();
+      if (panFrame === null) {
+        panFrame = requestAnimationFrame(() => {
+          panFrame = null;
+          updatePosition();
+        });
+      }
     }
   });
   viewport.addEventListener("pointerup", () => {
     drag = null;
+    if (panFrame !== null) {
+      cancelAnimationFrame(panFrame);
+      panFrame = null;
+      updatePosition();
+    }
   });
   viewport.addEventListener("pointercancel", () => {
     drag = null;
@@ -313,7 +330,10 @@ export function renderMap(host, data, filters, matches, cellUrl, rowUrl) {
     update();
   });
   observer.observe(viewport);
-  disposeMap = () => observer.disconnect();
+  disposeMap = () => {
+    observer.disconnect();
+    if (panFrame !== null) cancelAnimationFrame(panFrame);
+  };
   const count = garageNodes.filter((g) => g.match && g.cell.number !== null).length;
   const status = document.createElement("p");
   status.className = "map-count";
