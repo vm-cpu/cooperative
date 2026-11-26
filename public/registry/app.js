@@ -113,7 +113,10 @@ function title(text, subtitle, extra = "") {
 }
 function garageItem(g) {
   const owner = data.ownerById.get(g.ownerId);
-  return `<li class="record"><div><a class="record-link" data-record="${escape(g.id)}" href="${escape(detailUrl("garage", g.id))}">Гараж ${label(g)}</a><span class="record-meta">Ряд ${escape(g.row || "не вказано")}${g.provisional ? " · умовний" : ""}</span></div><div><p>${escape(owner?.name || "Власника не вказано")}</p>${g.tenant ? `<p class="record-meta">Орендар: ${escape(g.tenant.person.name)}</p>` : ""}${g.type === "technical" ? '<span class="status neutral">Технічний бокс</span>' : ""}${!g.ownerId ? '<span class="status">Без власника</span>' : ""}${g.needsNumberReview ? '<span class="status">Уточнити номер</span>' : ""}</div><a class="button quiet" href="${escape(detailUrl("garage", g.id))}" aria-label="Відкрити картку гаража ${label(g)}">Відкрити картку</a></li>`;
+  const ownerLine = owner
+    ? `<p class="garage-owner">Власник: <strong>${escape(owner.name)}</strong></p>`
+    : '<span class="owner-unknown" role="img" aria-label="Без власника" title="Без власника"></span>';
+  return `<li class="record"><div><a class="record-link" data-record="${escape(g.id)}" href="${escape(detailUrl("garage", g.id))}">Гараж ${label(g)}</a>${g.provisional ? '<span class="record-meta">Умовний ряд</span>' : ""}</div><div>${ownerLine}${g.tenant ? `<p class="record-meta garage-tenant">Орендар: ${escape(g.tenant.person.name)}</p>` : ""}${g.type === "technical" ? '<span class="status neutral">Технічний бокс</span>' : ""}${g.needsNumberReview ? '<span class="status">Уточнити номер</span>' : ""}</div><a class="button quiet" href="${escape(detailUrl("garage", g.id))}" aria-label="Відкрити картку гаража ${label(g)}">Відкрити картку</a></li>`;
 }
 function empty() {
   return '<div class="empty"><h2>Нічого не знайдено</h2><p>Спробуйте інший номер чи ім’я або скиньте фільтри.</p><button type="button" data-reset>Скинути фільтри</button></div>';

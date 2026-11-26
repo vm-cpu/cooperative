@@ -109,8 +109,8 @@ for (const width of [320, 375, 768]) {
       await page.getByLabel("Без власника", { exact: true }).check();
       await expect(page.locator(".record")).not.toHaveCount(0);
       for (const record of await page.locator(".record").all()) {
-        await expect(record).toContainText("Ряд 3");
-        await expect(record).toContainText("Власника не вказано");
+        await expect(record.locator(".record-link")).toHaveText(/^Гараж 3-/);
+        await expect(record.getByRole("img", { name: "Без власника" })).toBeVisible();
       }
       await page.reload();
       await expect(page.locator("#row")).toHaveValue("3");
