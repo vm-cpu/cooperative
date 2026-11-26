@@ -336,6 +336,20 @@ main:focus {
   margin: 0;
   overflow-wrap: anywhere;
 }
+.garage-owner {
+  font-size: 1.08rem;
+}
+.record .garage-tenant {
+  margin-top: 0.5rem;
+}
+.owner-unknown {
+  display: block;
+  width: 1.3rem;
+  height: 1.3rem;
+  background: #ffda66;
+  border: 1px solid #84620a;
+  border-radius: 0.2rem;
+}
 .record-meta {
   font-size: 0.9rem;
   color: var(--muted);
